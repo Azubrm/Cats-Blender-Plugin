@@ -50,7 +50,7 @@ package_name = __package__
 # This compatibility build must not be replaced by the archived upstream's
 # Blender 5.0 releases. Install new extension ZIPs through Blender instead.
 SELF_UPDATE_ENABLED = False
-MANUAL_UPDATE_MESSAGE = 'Install Cats updates from a ZIP in Blender Preferences.'
+MANUAL_UPDATE_MESSAGE = t('Updater.manualUpdate')
 
 # Icons for UI
 ICON_URL = 'URL'
@@ -238,7 +238,7 @@ class ConfirmUpdatePanel(bpy.types.Operator):
 
         col.separator()
         row = col.row(align=True)
-        row.label(text='Version: ' + version_str)
+        row.label(text=t('Updater.version', version=version_str))
 
         if confirm_update_to == 'dev':
             col.separator()
@@ -820,7 +820,7 @@ def draw_updater_panel(context, layout, user_preferences=False):
 
     if not SELF_UPDATE_ENABLED:
         col.label(text='Cats ' + current_version_str)
-        col.label(text='Install updates from a ZIP in Blender Preferences.', icon='INFO')
+        col.label(text=t('Updater.manualUpdate'), icon='INFO')
         return
 
     scale_big = 2

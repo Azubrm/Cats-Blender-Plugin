@@ -36,11 +36,11 @@ class VisemePanel(ToolPanel, bpy.types.Panel):
         row = box_col.row(align=True)
         row.scale_y = 1.3
         if context.scene.viseme_preview_mode:
-            row.operator(Viseme.VisemePreviewOperator.bl_idname, text="Stop Preview", icon='PAUSE')
+            row.operator(Viseme.VisemePreviewOperator.bl_idname, text=t('VisemePanel.stopPreview.label'), icon='PAUSE')
             row = box_col.row(align=True)
             row.prop(context.scene, "viseme_preview_selection", text="")
         else:
-            row.operator(Viseme.VisemePreviewOperator.bl_idname, text="Preview Visemes", icon='PLAY')
+            row.operator(Viseme.VisemePreviewOperator.bl_idname, text=t('VisemePreviewOperator.label'), icon='PLAY')
         
         box_col.separator()
 

@@ -1,6 +1,6 @@
 # MIT License
 
-CATS_VERSION = "5.2.2"
+CATS_VERSION = "5.2.3"
 dev_branch = False
 
 import os
@@ -169,7 +169,7 @@ def check_unsupported_blender_versions():
     # Keep this range in sync with blender_manifest.toml. Registration has
     # not started here, so there is nothing to unregister on rejection.
     if not (5, 0, 0) <= bpy.app.version < (5, 3, 0):
-        raise ImportError('This Cats build targets Blender 5.0 through 5.2.')
+        raise ImportError(t('Main.error.unsupportedBlender'))
 
 def set_cats_version_string():
     version_parts = CATS_VERSION.split(".")

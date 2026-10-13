@@ -194,8 +194,8 @@ class ImportAnyModel(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
         elif file_ending == 'dae':
             if bpy.app.version >= (5, 0, 0):
                 Common.show_error(6, [
-                    'Blender 5.0 and newer no longer include Collada (.dae) import.',
-                    'Convert the model to FBX using Blender 4.5 LTS first.',
+                    t('ImportAnyModel.error.colladaRemoved'),
+                    t('ImportAnyModel.error.colladaConvert'),
                 ])
                 return
             try:
@@ -454,8 +454,8 @@ class ImportMMD(bpy.types.Operator):
 @register_wrap
 class ImportMMDAnimation(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
     bl_idname = 'cats_importer.import_mmd_animation'
-    bl_label = "MMD Animation"
-    bl_description = "Import a MMD Animation (.vmd)"
+    bl_label = t('ImportMMDAnimation.label')
+    bl_description = t('ImportMMDAnimation.desc')
     bl_options = {'INTERNAL'}
 
     filter_glob: bpy.props.StringProperty(
@@ -790,8 +790,8 @@ class EnableMMD(bpy.types.Operator):
 @register_wrap
 class ExportGmodPlayermodel(bpy.types.Operator):
     bl_idname = "cats_importer.export_gmod_addon"
-    bl_label = "Export Gmod Addon"
-    bl_description = "Export as Gmod Playermodel Addon to your addons and make GMA beside Blender file. May not always work."
+    bl_label = t('ExportGmodAddon.label')
+    bl_description = t('ExportGmodAddon.desc')
     bl_options = {'INTERNAL'}
 
     steam_library_path = bpy.props.StringProperty(subtype='FILE_PATH', options={'HIDDEN', 'SKIP_SAVE'})
@@ -2138,8 +2138,8 @@ class ExportModel(bpy.types.Operator):
 @register_wrap
 class ImportMMDAnimationNew(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
     bl_idname = 'cats_importer.import_mmd_animation_new'
-    bl_label = "Import MMD Animation (New)"
-    bl_description = "Import a MMD Animation (.vmd) using MMD Tools importer"
+    bl_label = t('ImportMMDAnimationNew.label')
+    bl_description = t('ImportMMDAnimationNew.desc')
     bl_options = {'INTERNAL'}
 
     filename_ext = ".vmd"
@@ -2147,29 +2147,29 @@ class ImportMMDAnimationNew(bpy.types.Operator, bpy_extras.io_utils.ImportHelper
 
     # Copy the properties from MMD Tools importer that we want to expose
     bone_mapper: bpy.props.EnumProperty(
-        name="Bone Mapper",
-        description="Select bone mapper",
+        name=t('ImportMMDAnimationNew.boneMapper.label'),
+        description=t('ImportMMDAnimationNew.boneMapper.desc'),
         items=[
-            ("BLENDER", "Blender", "Use blender bone name", 0),
-            ("PMX", "PMX", "Use japanese name of MMD bone", 1),
-            ("RENAMED_BONES", "Renamed bones", "Rename the bone of motion data to be blender suitable", 2),
+            ("BLENDER", "Blender", t('ImportMMDAnimationNew.boneMapper.blender'), 0),
+            ("PMX", "PMX", t('ImportMMDAnimationNew.boneMapper.pmx'), 1),
+            ("RENAMED_BONES", t('ImportMMDAnimationNew.boneMapper.renamed'), t('ImportMMDAnimationNew.boneMapper.renamedDesc'), 2),
         ],
         default="PMX",
     )
     rename_bones: bpy.props.BoolProperty(
-        name="Rename Bones - L / R Suffix",
-        description="Use Blender naming conventions for Left / Right paired bones",
+        name=t('ImportMMDAnimationNew.renameBones.label'),
+        description=t('ImportMMDAnimationNew.renameBones.desc'),
         default=True,
     )
     use_underscore: bpy.props.BoolProperty(
-        name="Rename Bones - Use Underscore",
-        description="Will not use dot, e.g. if renaming bones, will use _R instead of .R",
+        name=t('ImportMMDAnimationNew.underscore.label'),
+        description=t('ImportMMDAnimationNew.underscore.desc'),
         default=False,
     )
     dictionary: bpy.props.EnumProperty(
-        name="Rename Bones To English",
+        name=t('ImportMMDAnimationNew.dictionary.label'),
         items=DictionaryEnum.get_dictionary_items,
-        description="Translate bone names from Japanese to English using selected dictionary",
+        description=t('ImportMMDAnimationNew.dictionary.desc'),
     )
 
     @classmethod
@@ -2230,13 +2230,13 @@ class ImportMMDAnimationNew(bpy.types.Operator, bpy_extras.io_utils.ImportHelper
             auto_scene_setup.setupFrameRanges()
             auto_scene_setup.setupFps()
             
-            self.report({'INFO'}, f'Successfully imported animation from "{os.path.basename(self.filepath)}"')
+            self.report({'INFO'}, t('ImportMMDAnimationNew.success', file=os.path.basename(self.filepath)))
             return {'FINISHED'}
             
         except Exception as e:
             import traceback
             err_msg = traceback.format_exc()
-            self.report({'ERROR'}, f"Error importing animation: {str(e)}")
+            self.report({'ERROR'}, t('ImportMMDAnimationNew.error', error=str(e)))
             print(err_msg)
             return {'CANCELLED'}
 

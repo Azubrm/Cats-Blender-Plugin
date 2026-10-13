@@ -85,18 +85,18 @@ def custom_draw_smc_ui(context, m_col):
             col.scale_y = 1.3
             col.operator(
                 "smc.refresh_ob_data",
-                text="Update Material List" if hasattr(context.scene, 'smc_ob_data') and context.scene.smc_ob_data else "Generate Material List",
+                text=t('OptimizePanel.updateMaterialList.label') if hasattr(context.scene, 'smc_ob_data') and context.scene.smc_ob_data else t('AtlasHelpButton.label'),
                 icon='FILE_REFRESH'
             )
             col = m_col.column()
             col.scale_y = 1.3
-            col.operator("smc.combiner", text="Save Atlas to..", icon='TEXTURE').cats = True
+            col.operator("smc.combiner", text=t('OptimizePanel.saveAtlas.label'), icon='TEXTURE').cats = True
             
         elif globs_module.pil_install_attempted:
             # Installation complete, restart required
             col = m_col.box().column()
-            col.label(text="Installation complete", icon='CHECKMARK')
-            col.label(text="Please restart Blender")
+            col.label(text=t('OptimizePanel.installationComplete'), icon='CHECKMARK')
+            col.label(text=t('EnableMMD.required2'))
             
         else:
             # Pillow needs to be installed - use Material Combiner's installer
@@ -108,7 +108,7 @@ def custom_draw_smc_ui(context, m_col):
                 m_col.separator()
                 row = m_col.row()
                 row.scale_y = 1.3
-                row.operator('smc.get_pillow', text='Install Pillow', icon='IMPORT')
+                row.operator('smc.get_pillow', text=t('OptimizePanel.installPillow.label'), icon='IMPORT')
             
     except Exception as e:
         # If there's any error, show a helpful message
@@ -187,7 +187,7 @@ class AtlasSubPanel(ToolPanel, bpy.types.Panel):
     def draw_atlas_section(self, col, context):
         try:
             # PBR Info
-            draw_info_box(col, "For PBR/Normal maps, use Tuxedo Blender Plugin.")
+            draw_info_box(col, t('OptimizePanel.pbrInfo'))
 
             col.separator()
 
@@ -325,7 +325,7 @@ class MaterialSubPanel(ToolPanel, bpy.types.Panel):
 
             header_row = box_col.row(align=True)
             header_row.scale_y = 0.75
-            header_row.label(text="Remove Doubles", icon='X')
+            header_row.label(text=t('RemoveDoubles.label'), icon='X')
 
             box_col.prop(context.scene, 'remove_doubles_threshold')
             row = box_col.row(align=True)
@@ -333,7 +333,7 @@ class MaterialSubPanel(ToolPanel, bpy.types.Panel):
             row.operator(Armature_manual.RemoveDoubles.bl_idname, icon='X')
             
         except Exception as e:
-            draw_error_box(col, ["Error loading material operations", str(e)])
+            draw_error_box(col, [t('OptimizePanel.error.materialOperations'), str(e)])
 
 
 @register_wrap
@@ -424,6 +424,6 @@ class BoneMergingSubPanel(ToolPanel, bpy.types.Panel):
             box_col.operator(Armature_manual.ConnectBonesButton.bl_idname, icon='CONSTRAINT_BONE')
             
         except Exception as e:
-            draw_error_box(col, ["Error loading bone merging operations", str(e)])
+            draw_error_box(col, [t('OptimizePanel.error.boneMergingOperations'), str(e)])
 
 

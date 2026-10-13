@@ -188,7 +188,7 @@ class AttachMesh(bpy.types.Operator):
         verts_in_group = [v for v in mesh.data.vertices 
                          for g in v.groups if g.group == vg.index]
         if not verts_in_group:
-            self.report({'ERROR'}, f"Vertex group '{mesh_name}' is empty")
+            self.report({'ERROR'}, t('AttachMesh.error.emptyGroup', mesh=mesh_name))
             saved_data.load()
             wm.progress_end()
             return {'CANCELLED'}
@@ -203,7 +203,7 @@ class AttachMesh(bpy.types.Operator):
         # Create and setup bone
         attach_to_bone = armature.data.edit_bones.get(attach_bone_name)
         if not attach_to_bone:
-            self.report({'ERROR'}, f"Attach bone '{attach_bone_name}' not found")
+            self.report({'ERROR'}, t('AttachMesh.error.boneMissing', bone=attach_bone_name))
             saved_data.load()
             wm.progress_end()
             return {'CANCELLED'}
@@ -215,7 +215,7 @@ class AttachMesh(bpy.types.Operator):
         # Calculate optimal bone placement
         center_vector = Common.find_center_vector_of_vertex_group(mesh, mesh_name)
         if center_vector is None:
-            self.report({'ERROR'}, f"Unable to find center of vertex group")
+            self.report({'ERROR'}, t('AttachMesh.error.noGroupCenter'))
             saved_data.load()
             wm.progress_end()
             return {'CANCELLED'}
@@ -260,14 +260,14 @@ class TransformValidator:
     def validate_mesh_transforms(mesh: Optional[bpy.types.Object]) -> Tuple[bool, str]:
         """Validate mesh transforms are suitable for attaching."""
         if not mesh:
-            return False, "Mesh not found"
+            return False, t('AttachMesh.error.meshMissing')
         
         # Check for non-uniform scale
         scale = mesh.scale
         if (abs(scale[0] - scale[1]) > SCALE_TOLERANCE or 
             abs(scale[1] - scale[2]) > SCALE_TOLERANCE or
             abs(scale[0] - scale[2]) > SCALE_TOLERANCE):
-            return False, "Mesh has non-uniform scale. Please apply scale (Ctrl+A)"
+            return False, t('AttachMesh.error.nonUniformScale')
         
         return True, ""
     
@@ -306,10 +306,10 @@ class TransformValidator:
 def validate_mesh_name(armature: bpy.types.Object, mesh_name: str) -> Tuple[bool, str]:
     """Validate mesh name doesn't conflict with existing bones."""
     if not armature or not armature.data:
-        return False, "Invalid armature"
+        return False, t('AttachMesh.error.invalidArmature')
         
     if mesh_name in armature.data.bones:
-        return False, f"Bone named '{mesh_name}' already exists in armature"
+        return False, t('AttachMesh.error.boneExists', bone=mesh_name)
     return True, ""
 
 def calculate_bone_orientation(mesh, vertices):

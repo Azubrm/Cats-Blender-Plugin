@@ -44,26 +44,26 @@ class ArmatureValidator:
         
         # Basic armature validation
         if not armature:
-            errors.append("No armature found in the scene")
+            errors.append(t('EyeTrackingValidator.error.noArmature'))
             return errors, warnings
             
         if not armature.data:
-            errors.append("Armature has no data")
+            errors.append(t('ArmatureValidator.error.noData'))
             return errors, warnings
         
         if any(armature.lock_location) or any(armature.lock_rotation) or any(armature.lock_scale):
-            warnings.append("Armature has locked transforms - these will be unlocked")
+            warnings.append(t('ArmatureValidator.warning.lockedTransforms'))
         
         # Check bone count
         bone_count = len(armature.data.bones)
         if bone_count == 0:
-            errors.append("Armature has no bones")
+            errors.append(t('ArmatureValidator.error.noBones'))
         elif bone_count > 1000:
-            warnings.append(f"Armature has {bone_count} bones - processing may be slow")
+            warnings.append(t('ArmatureValidator.warning.manyBones', count=bone_count))
         
         # Check for Rigify/Metarig (from original logic)
         if ArmatureValidator._is_rigify_armature(armature):
-            errors.append("Rigify and Metarig armatures are not supported. Please use Rigify to Unity plugin instead.")
+            errors.append(t('ArmatureValidator.error.rigify'))
         
         # Validate meshes
         mesh_errors, mesh_warnings = ArmatureValidator._validate_meshes(context, armature)
@@ -78,7 +78,7 @@ class ArmatureValidator:
         
         for bone_group in required_bone_groups:
             if not any(bone.name in bone_group for bone in armature.data.bones):
-                warnings.append(f"No bones found from group: {', '.join(bone_group)}")
+                warnings.append(t('ArmatureValidator.warning.missingBoneGroup', bones=', '.join(bone_group)))
         
         return errors, warnings
     
@@ -113,14 +113,14 @@ class ArmatureValidator:
                     break
             
             if not is_vrm:
-                errors.append("No meshes found in the scene")
+                errors.append(t('ArmatureValidator.error.noMeshes'))
         
         # Single user data check removed - handled by original code to preserve popup behavior
         
         # Check for valid vertex groups
         for mesh in meshes:
             if not mesh.vertex_groups:
-                warnings.append(f"Mesh '{mesh.name}' has no vertex groups")
+                warnings.append(t('ArmatureValidator.warning.noVertexGroups', mesh=mesh.name))
             
             # Check for NaN values in UV coordinates
             uv_issues = 0
@@ -130,7 +130,7 @@ class ArmatureValidator:
                         uv_issues += 1
             
             if uv_issues > 0:
-                warnings.append(f"Mesh '{mesh.name}' has {uv_issues} faulty UV coordinates that will be fixed")
+                warnings.append(t('ArmatureValidator.warning.faultyUV', mesh=mesh.name, count=uv_issues))
         
         return errors, warnings
 
@@ -272,7 +272,7 @@ class FixArmature(bpy.types.Operator):
                 return {'CANCELLED'}
                 
         except Exception as e:
-            self.report({'ERROR'}, f"Validation failed: {str(e)}")
+            self.report({'ERROR'}, t('ArmatureValidator.error.failed', error=str(e)))
             return {'CANCELLED'}
         
         # Initialize lightweight bone cache for performance optimization
@@ -328,12 +328,12 @@ class FixArmature(bpy.types.Operator):
                     break
                 
         if is_rigify:
-            Common.show_error(3, ["Rigify and Metarig armatures are not", 
-                                "supported. Please use Rigify to Unity", 
-                                "plugin instead.",
-                                "If you think this is a error, then make sure your",
-                                "bones and amrature do not have metarig", 
-                                "names or Rigify names."])
+            Common.show_error(3, [t('FixArmature.error.rigify1'), 
+                                t('FixArmature.error.rigify2'), 
+                                t('FixArmature.error.rigify3'),
+                                t('FixArmature.error.rigify4'),
+                                t('FixArmature.error.rigify5'), 
+                                t('FixArmature.error.rigify6')])
             return {'CANCELLED'}
 
         # Check if all meshes are single user

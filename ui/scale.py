@@ -93,7 +93,7 @@ class ScalingPanel(ToolPanel, bpy.types.Panel):
             check_for_imscale()
             
         except Exception as e:
-            draw_error_box(col, ["Error loading scaling panel", str(e)])
+            draw_error_box(col, [t('ScalingPanel.error.loading'), str(e)])
 
     def draw_disabled_message(self, col):
         draw_error_box(col, [

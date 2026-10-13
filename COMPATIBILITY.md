@@ -1,7 +1,7 @@
 # Blender 5.2 compatibility notes
 
 Target: Blender 5.2.2 LTS, as listed on the [official download page](https://www.blender.org/download/)
-on 2026-10-13. Package version: 5.2.2. The manifest accepts Blender 5.0 through
+on 2026-10-13. Package version: 5.2.3. The manifest accepts Blender 5.0 through
 5.2 and stops before 5.3, which is outside this adaptation's scope.
 
 ## Validation status
@@ -11,8 +11,23 @@ checks, extension validation, installation checks, or functional smoke tests
 were run as part of this adaptation. Changes are based on source inspection,
 bundled Blender 5.2 Python source, and official API documentation. The user
 reports that 5.2.1 enables without errors after restarting Blender, but shows
-extension namespace warnings. The 5.2.2 changes have not been runtime tested;
+extension namespace warnings. The 5.2.2 and 5.2.3 changes have not been runtime tested;
 full functional compatibility remains unverified.
+
+## 5.2.3 Simplified Chinese interface
+
+The existing Chinese dictionary is completed for newer Cats features, and
+hard-coded interface labels and operator messages use the translation helper.
+First-run language detection now follows Blender even when no Cats settings
+file exists, with an explicit `zh_HANS` to `zh_CN` mapping. Bundled dictionaries
+provide a baseline underneath partial downloaded dictionaries, and English
+provides a fallback for individual missing entries in other languages.
+
+The language selector shows native language names including **简体中文**.
+Language changes are saved and the settings panel requests a restart so that
+class labels can be rebuilt, without automatically reloading every add-on.
+These are interface translations; model data names and file-format identifiers
+are unchanged. Third-party add-on interfaces keep their own localization.
 
 ## 5.2.2 extension namespace fix
 

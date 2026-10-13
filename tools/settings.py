@@ -29,7 +29,7 @@ settings_threads = []
 # Settings name = [Default Value, Require Blender Restart]
 settings_default = OrderedDict()
 settings_default['embed_textures'] = [False, False]
-settings_default['ui_lang'] = ["auto", False]
+settings_default['ui_lang'] = ["auto", True]
 
 lock_settings = False
 

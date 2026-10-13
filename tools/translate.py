@@ -58,11 +58,11 @@ class TranslateShapekeyButton(bpy.types.Operator):
             try:
                 os.makedirs(cats_dir) 
             except OSError:
-                self.report({'ERROR'}, "Unable to create export folder. Please manually set the export directory")
+                self.report({'ERROR'}, t('TranslateExport.error.createFolder'))
                 return {'CANCELLED'}
                 
         if not os.path.exists(cats_dir) or not os.access(cats_dir, os.W_OK):  
-            self.report({'ERROR'}, "Unable to write to export folder. Please manually set the export directory")
+            self.report({'ERROR'}, t('TranslateExport.error.writeFolder'))
             return {'CANCELLED'}
             
         skip_locked_shape_keys = bpy.context.scene.skip_locked_shape_keys
@@ -70,7 +70,7 @@ class TranslateShapekeyButton(bpy.types.Operator):
             
             blend_path = bpy.context.blend_data.filepath
             if not blend_path:
-                self.report({'ERROR'}, "Please save blend first!")
+                self.report({'ERROR'}, t('TranslateExport.error.saveBlend'))
                 return {'CANCELLED'}
             
             to_translate = []
@@ -158,18 +158,18 @@ class TranslateBonesButton(bpy.types.Operator):
             try:
                 os.makedirs(cats_dir) 
             except OSError:
-                self.report({'ERROR'}, "Unable to create export folder. Please manually set the export directory")
+                self.report({'ERROR'}, t('TranslateExport.error.createFolder'))
                 return {'CANCELLED'}
                 
         if not os.path.exists(cats_dir) or not os.access(cats_dir, os.W_OK):  
-            self.report({'ERROR'}, "Unable to write to export folder. Please manually set the export directory")
+            self.report({'ERROR'}, t('TranslateExport.error.writeFolder'))
             return {'CANCELLED'}
             
         if context.scene.export_translate_csv:
             
             blend_path = bpy.context.blend_data.filepath
             if not blend_path:
-                self.report({'ERROR'}, "Please save blend first!")
+                self.report({'ERROR'}, t('TranslateExport.error.saveBlend'))
                 return {'CANCELLED'}
             
             to_translate = []
@@ -247,17 +247,17 @@ class TranslateObjectsButton(bpy.types.Operator):
             try:
                 os.makedirs(cats_dir)
             except OSError:
-                self.report({'ERROR'}, "Unable to create export folder. Please manually set the export directory")
+                self.report({'ERROR'}, t('TranslateExport.error.createFolder'))
                 return {'CANCELLED'}
 
         if not os.path.exists(cats_dir) or not os.access(cats_dir, os.W_OK):
-            self.report({'ERROR'}, "Unable to write to export folder. Please manually set the export directory")
+            self.report({'ERROR'}, t('TranslateExport.error.writeFolder'))
             return {'CANCELLED'}
 
         if context.scene.export_translate_csv:
             blend_path = bpy.context.blend_data.filepath
             if not blend_path:
-                self.report({'ERROR'}, "Please save blend first!")
+                self.report({'ERROR'}, t('TranslateExport.error.saveBlend'))
                 return {'CANCELLED'}
 
             to_translate = []
@@ -331,17 +331,17 @@ class TranslateMaterialsButton(bpy.types.Operator):
             try:
                 os.makedirs(cats_dir)
             except OSError:
-                self.report({'ERROR'}, "Unable to create export folder. Please manually set the export directory")
+                self.report({'ERROR'}, t('TranslateExport.error.createFolder'))
                 return {'CANCELLED'}
 
         if not os.path.exists(cats_dir) or not os.access(cats_dir, os.W_OK):
-            self.report({'ERROR'}, "Unable to write to export folder. Please manually set the export directory")
+            self.report({'ERROR'}, t('TranslateExport.error.writeFolder'))
             return {'CANCELLED'}
 
         if context.scene.export_translate_csv:
             blend_path = bpy.context.blend_data.filepath
             if not blend_path:
-                self.report({'ERROR'}, "Please save blend first!")
+                self.report({'ERROR'}, t('TranslateExport.error.saveBlend'))
                 return {'CANCELLED'}
 
             to_translate = []
@@ -460,7 +460,7 @@ class TranslateAllButton(bpy.types.Operator):
         if context.scene.export_translate_csv:
             if not bpy.data.filepath:
                 # Prompt the user to save the blend file
-                self.report({'ERROR'}, "Please save the blend file before exporting translations.")
+                self.report({'ERROR'}, t('TranslateExport.error.saveBeforeExport'))
                 return {'CANCELLED'}
 
         error_shown = False
@@ -640,9 +640,7 @@ def update_dictionary(to_translate_list, translating_shapes=False, self=None):
         except (json.JSONDecodeError, TypeError) as e:
             if self:
                 print(traceback.format_exc())
-                self.report({'ERROR'}, 'Google Translate API has changed or returned an invalid response or you'
-                                    '\ncould have been banned. Cats translated what it could with the local dictionary,'
-                                    '\nbut you will need to update the translation module or try again later.')
+                self.report({'ERROR'}, t('update_dictionary.error.invalidResponse'))
             print('GOOGLE TRANSLATE API ERROR:', str(e))
             return
         except RuntimeError as e:

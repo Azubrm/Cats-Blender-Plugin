@@ -353,7 +353,7 @@ class CreateEyesButton(bpy.types.Operator):
         # Create backup
         backup = EyeTrackingBackup()
         if not backup.store_bone_positions(Common.get_armature()):
-            self.report({'WARNING'}, "Failed to create backup")
+            self.report({'WARNING'}, t('CreateEyesButton.warning.backupFailed'))
 
         try:
             saved_data = Common.SavedData()
@@ -504,9 +504,9 @@ class CreateEyesButton(bpy.types.Operator):
             return {'FINISHED'}
 
         except Exception as e:
-            self.report({'ERROR'}, f"Setup failed: {str(e)}")
+            self.report({'ERROR'}, t('CreateEyesButton.error.setupFailed', error=str(e)))
             if backup.restore_bone_positions(Common.get_armature()):
-                self.report({'WARNING'}, "Restored from backup")
+                self.report({'WARNING'}, t('CreateEyesButton.warning.restored'))
             wm.progress_end()
             return {'CANCELLED'}
 

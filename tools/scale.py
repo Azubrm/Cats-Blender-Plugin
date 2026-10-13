@@ -57,7 +57,7 @@ class ImmersiveScalerButton(bpy.types.Operator):
     def execute(self, context):
         webbrowser.open('https://github.com/teamneoneko/immersive_scaler/releases/latest')
 
-        self.report({'INFO'}, 'ImmersiveScalerButton.success')
+        self.report({'INFO'}, t('ImmersiveScalerButton.success'))
         return {'FINISHED'}
 
 # Link to readme for help

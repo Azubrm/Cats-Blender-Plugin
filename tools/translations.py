@@ -10,7 +10,6 @@ import json
 import urllib
 import addon_utils
 import requests
-from bpy.app.translations import locale
 
 from .register import register_wrap
 from . import settings
@@ -22,15 +21,29 @@ languages = []
 verbose = True
 last_loaded_language = None
 dictionary_download_link = "https://raw.githubusercontent.com/teamneoneko/Cats-Blender-Plugin-Unofficial-translations/4.3-translations/dictionary.json"
-_addon_startup_time = None
+
+
+def _translation_messages(language):
+    """Keep bundled entries when an older downloaded dictionary lacks them."""
+    messages = {}
+    filename = language + ".json"
+    for path in (os.path.join(storage.RESOURCES_DIR, "translations", filename),
+                 storage.user_file("translations", filename)):
+        try:
+            with open(path, encoding="utf8") as file:
+                entries = json.load(file).get("messages", {})
+            if isinstance(entries, dict):
+                messages.update((key, value) for key, value in entries.items()
+                                if isinstance(value, str) and value)
+        except FileNotFoundError:
+            continue
+        except (OSError, ValueError, AttributeError) as error:
+            print(f"Could not load Cats translations from {path}: {error}")
+    return messages
+
 
 def load_translations(override_language=None):
-    global dictionary, languages, last_loaded_language, _addon_startup_time
-    import time
-
-    # Set startup time on first load
-    if _addon_startup_time is None:
-        _addon_startup_time = time.time()
+    global dictionary, languages, last_loaded_language
 
     dictionary = dict()
     languages = ["auto"]
@@ -50,34 +63,22 @@ def load_translations(override_language=None):
             languages.append(os.path.splitext(filename)[0])
     print(f"Available languages: {languages}")
 
-    # Determine the language to load
-    language_to_load = language if language and language in languages else None
+    # Normalize Blender locales (including zh_HANS) to bundled language codes.
+    if not language or language == "auto":
+        language = bpy.app.translations.locale
+    language_to_load = convert_locale_to_language_code(language)
 
     # If language is not available, fallback to en_US
     if language_to_load is None:
         print(f"Language '{language}' not available, defaulting to en_US")
         language_to_load = "en_US"
 
-    # Load the translation file
-    translation_file = storage.readable_resource("translations", language_to_load + ".json")
-    if os.path.exists(translation_file):
-        print(f"Loading translation file: {translation_file}")
-        with open(translation_file, 'r', encoding="utf8") as file:
-            dictionary = json.load(fp=file)["messages"]
-        last_loaded_language = language_to_load
-        print(f"Loaded {len(dictionary)} translations from {language_to_load}")
-    else:
-        print(f"Translation file not found for language: {language_to_load}")
-        # Load the default "en_US" translation file as last resort
-        default_file = storage.readable_resource("translations", "en_US.json")
-        if os.path.exists(default_file):
-            print(f"Loading fallback translation file: {default_file}")
-            with open(default_file, 'r', encoding="utf8") as file:
-                dictionary = json.load(fp=file)["messages"]
-            last_loaded_language = "en_US"
-            print(f"Loaded {len(dictionary)} translations from en_US (fallback)")
-        else:
-            print("DEFAULT TRANSLATION FILE 'en_US.json' NOT FOUND.")
+    # English is a per-entry fallback, not a replacement for partial locales.
+    dictionary = _translation_messages("en_US")
+    if language_to_load != "en_US":
+        dictionary.update(_translation_messages(language_to_load))
+    last_loaded_language = language_to_load
+    print(f"Loaded {len(dictionary)} translations for {language_to_load}")
 
     check_missing_translations()
 
@@ -101,30 +102,35 @@ def check_missing_translations():
 
 def get_languages_list(self, context):
     choices = []
+    names = {
+        "auto": t('Language.auto'),
+        "en_US": "English",
+        "zh_CN": "简体中文",
+        "ja_JP": "日本語",
+        "ko_KR": "한국어",
+    }
 
     for language in languages:
         # 1. Will be returned by context.scene
         # 2. Will be shown in lists
         # 3. will be shown in the hover description (below description)
-        choices.append((language, language, language))
+        name = names.get(language, language)
+        choices.append((language, name, name))
 
     return choices
 
 
 def update_ui(self, context):
-    global _addon_startup_time
-    import time
-
     print("update_ui function called")
-
-    # Don't trigger reload during the first 2 seconds after addon load (initialization period or crashes may occur)
-    if _addon_startup_time and (time.time() - _addon_startup_time) < 2.0:
-        print("Skipping reload during initialization period")
-        return
 
     # Get the NEW language value directly from the scene property (not from file)
     # because the update callback is triggered BEFORE the settings file is saved
     current_language = context.scene.ui_lang if context and hasattr(context, 'scene') else None
+    if not current_language or settings.lock_settings or settings.settings_data is None:
+        return
+
+    # Persist the selector even if "auto" resolves to the currently loaded locale.
+    settings.update_settings_core(self, context)
 
     # Handle "auto" mode - detect from Blender locale
     if current_language and "auto" in current_language.lower():
@@ -138,44 +144,30 @@ def update_ui(self, context):
     if current_language != last_loaded_language:
         print(f"Language changed from {last_loaded_language} to {current_language}, reloading translations")
 
-        # Save the settings first so get_language_from_settings() will return the new value
-        settings.update_settings_core(None, None)
-
-        load_translations()
-
-        # Automatically reload scripts after a delay to apply new translations (old method was unreliable)
-        def delayed_reload():
-            try:
-                print("Auto-reloading scripts to apply new language...")
-                bpy.ops.script.reload()
-                print("Language changed successfully!")
-            except Exception as e:
-                print(f"Script reload failed: {e}")
-            return None
-
-        # Delay by 2 seconds to ensure all dialogs are closed and operations complete (Or we get crashes due to gotchaes situation)
-        bpy.app.timers.register(delayed_reload, first_interval=2.0)
+        load_translations(override_language=current_language)
+        # Class labels are translated during import. The existing settings
+        # panel shows a restart notice instead of reloading every add-on.
+        if context and context.screen:
+            for area in context.screen.areas:
+                area.tag_redraw()
     else:
         print("Language unchanged, no reload needed")
 
 
 def get_language_from_settings():
     # Load settings file
+    settings_data = {}
     try:
         with open(storage.readable_resource("settings.json"), encoding="utf8") as file:
             settings_data = json.load(file)
     except FileNotFoundError:
-        print("SETTINGS FILE NOT FOUND!")
-        return
+        pass
     except json.decoder.JSONDecodeError:
         print("ERROR FOUND IN SETTINGS FILE")
-        return
+    if not isinstance(settings_data, dict):
+        settings_data = {}
 
-    if not settings_data:
-        print("NO DATA IN SETTINGS FILE")
-        return
-
-    lang = settings_data.get("ui_lang")
+    lang = settings_data.get("ui_lang", "auto")
     if not lang or "auto" in lang.lower():
         # Auto-detect language from Blender's locale
         from bpy.app.translations import locale as current_locale
@@ -195,7 +187,9 @@ def convert_locale_to_language_code(blender_locale):
         return None
 
     # Blender locale is already in the format we need (e.g., 'en_US')
-    locale_str = str(blender_locale)
+    locale_str = str(blender_locale).replace('-', '_')
+    if locale_str.lower() in {"zh", "zh_hans", "zh_hans_cn", "zh_sg", "zh_cn"}:
+        return "zh_CN"
 
     # Check if exact match exists in available languages
     for lang_file in storage.resource_files("translations"):
@@ -216,11 +210,15 @@ def convert_locale_to_language_code(blender_locale):
     print(f"No language match found for locale: {locale_str}, defaulting to en_US")
     return None
 
+# Load before operator class labels call t().
+load_translations()
+
+
 @register_wrap
 class DownloadTranslations(bpy.types.Operator):
     bl_idname = 'cats_translations.download_latest'
-    bl_label = 'Download Latest Translations'
-    bl_description = 'Download the latest translations for cats UI and internal dictionary'   
+    bl_label = t('DownloadTranslations.label')
+    bl_description = t('DownloadTranslations.desc')
     bl_options = {'INTERNAL'}
 
     def execute(self, context):
@@ -260,7 +258,7 @@ class DownloadTranslations(bpy.types.Operator):
 
         except requests.exceptions.RequestException as e:
             print("TRANSLATIONS FILES COULD NOT BE DOWNLOADED")
-            self.report({'ERROR'}, "TRANSLATIONS FILES COULD NOT BE DOWNLOADED: " + str(e))
+            self.report({'ERROR'}, t('DownloadTranslations.error.ui', error=str(e)))
             return {'CANCELLED'}
 
         print('TRANSLATIONS DOWNLOAD FINISHED')
@@ -277,16 +275,15 @@ class DownloadTranslations(bpy.types.Operator):
                 file.write(response.content)
         except requests.exceptions.RequestException as e:
             print("DICTIONARY FILE COULD NOT BE DOWNLOADED")
-            self.report({'ERROR'}, "DICTIONARY FILE COULD NOT BE DOWNLOADED: " + str(e))
+            self.report({'ERROR'}, t('DownloadTranslations.error.dictionary', error=str(e)))
             return {'CANCELLED'}
         print('DICTIONARY DOWNLOAD FINISHED')
 
-        bpy.ops.script.reload()
+        load_translations()
 
-        self.report({'INFO'}, "Successfully downloaded the translations and dictionary")
+        self.report({'INFO'}, t('DownloadTranslations.success'))
         return {'FINISHED'}
 
 
 
 
-load_translations()

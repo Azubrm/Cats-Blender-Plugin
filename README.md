@@ -11,6 +11,16 @@ Blender execution or automated tests were run as part of this adaptation, at
 the requester's direction. The version range is the intended target, not a
 certification that every inherited Cats feature works.
 
+## 中文界面（5.2.3）
+
+Blender 使用简体中文时，CATS 会自动加载内置中文词库，无需联网下载。
+也可以在 CATS → 设置与更新（Settings & Updates）→ Cats 语言（Cats Language）
+中选择 **简体中文**。切换后保存工程并完全重启 Blender，使面板名称和按钮提示完整生效。
+
+本版补齐了新功能的中文词条，并汉化此前写死为英文的常用界面与操作提示。
+FBX、VRM、MMD 等格式名称及骨骼、形态键的实际数据名称保持原样。
+独立安装的第三方插件界面由各自的翻译设置控制。
+
 ## Install
 
 1. Disable any older Cats installation, then restart Blender to unload it.
@@ -29,6 +39,12 @@ unsupported `TESTING` support category.
 
 ## Changes in this fork
 
+- Version 5.2.3 fills gaps in Simplified Chinese UI translations, translates
+  hard-coded interface text, and fixes first-run language detection without
+  a settings file. Blender's `zh_HANS` locale maps to `zh_CN`. Partial cached
+  dictionaries keep the bundled entries, and missing translations fall back
+  to English. Language changes are saved with a restart notice instead of
+  automatically reloading every Blender add-on.
 - Version 5.2.2 loads bundled MMD Tools inside the extension namespace and
   removes the `extern_tools` addition to `sys.path`, addressing the reported
   top-level-module and search-path policy warnings. Optional bundled Immersive

@@ -20,7 +20,7 @@ class SearchMenuOperatorBoneHead(bpy.types.Operator):
         items = Common.get_bones_head(self, context)
         return items
 
-    my_enum: bpy.props.EnumProperty(name="shapekeys", items=items_callback)
+    my_enum: bpy.props.EnumProperty(name=t('Scene.head.label'), items=items_callback)
 
 
     def execute(self, context):
@@ -39,7 +39,7 @@ class SearchMenuOperatorBoneEyeLeft(bpy.types.Operator):
     bl_label = ""
     bl_property = "my_enum"
 
-    my_enum: bpy.props.EnumProperty(name="shapekeys", items=Common.get_bones_eye_l)
+    my_enum: bpy.props.EnumProperty(name=t('Scene.eye_left.label'), items=Common.get_bones_eye_l)
 
     def execute(self, context):
         context.scene.eye_left = self.my_enum
@@ -57,7 +57,7 @@ class SearchMenuOperatorBoneEyeRight(bpy.types.Operator):
     bl_label = ""
     bl_property = "my_enum"
 
-    my_enum: bpy.props.EnumProperty(name="shapekeys", items=Common.get_bones_eye_r)
+    my_enum: bpy.props.EnumProperty(name=t('Scene.eye_right.label'), items=Common.get_bones_eye_r)
 
     def execute(self, context):
         context.scene.eye_right = self.my_enum
@@ -75,7 +75,7 @@ class SearchMenuOperatorShapekeyWinkLeft(bpy.types.Operator):
     bl_label = ""
     bl_property = "my_enum"
 
-    my_enum: bpy.props.EnumProperty(name="shapekeys", items=Common.get_shapekeys_eye_blink_l)
+    my_enum: bpy.props.EnumProperty(name=t('Scene.wink_left.label'), items=Common.get_shapekeys_eye_blink_l)
 
     def execute(self, context):
         context.scene.wink_left = self.my_enum
@@ -93,7 +93,7 @@ class SearchMenuOperatorShapekeyWinkRight(bpy.types.Operator):
     bl_label = ""
     bl_property = "my_enum"
 
-    my_enum: bpy.props.EnumProperty(name="shapekeys", items=Common.get_shapekeys_eye_blink_r)
+    my_enum: bpy.props.EnumProperty(name=t('Scene.wink_right.label'), items=Common.get_shapekeys_eye_blink_r)
 
     def execute(self, context):
         context.scene.wink_right = self.my_enum
@@ -111,7 +111,7 @@ class SearchMenuOperatorShapekeyLowerLidLeft(bpy.types.Operator):
     bl_label = ""
     bl_property = "my_enum"
 
-    my_enum: bpy.props.EnumProperty(name="shapekeys", items=Common.get_shapekeys_eye_low_l)
+    my_enum: bpy.props.EnumProperty(name=t('Scene.lowerlid_left.label'), items=Common.get_shapekeys_eye_low_l)
 
     def execute(self, context):
         context.scene.lowerlid_left = self.my_enum
@@ -129,7 +129,7 @@ class SearchMenuOperatorShapekeyLowerLidRight(bpy.types.Operator):
     bl_label = ""
     bl_property = "my_enum"
 
-    my_enum: bpy.props.EnumProperty(name="shapekeys", items=Common.get_shapekeys_eye_low_r)
+    my_enum: bpy.props.EnumProperty(name=t('Scene.lowerlid_right.label'), items=Common.get_shapekeys_eye_low_r)
 
     def execute(self, context):
         context.scene.lowerlid_right = self.my_enum
@@ -247,7 +247,7 @@ class LegacyEyeTrackingSubPanel(ToolPanel, bpy.types.Panel):
         if hasattr(context.scene, "progress_update"):
             col.separator()
             box = col.box()
-            box.label(text="Operation Progress:", icon='TIME')
+            box.label(text=t('Scene.progress_update.label') + ':', icon='TIME')
             box.prop(context.scene, "progress_update", text="")
 
     def draw_creation_mode(self, context, box):
@@ -438,11 +438,11 @@ class LegacyEyeTrackingSubPanel(ToolPanel, bpy.types.Panel):
 
         # Eye Movement Preview at bottom
         preview_box = col.box()
-        preview_box.label(text="Eye Movement Preview:", icon='PREVIEW_RANGE')
+        preview_box.label(text=t('EyeTrackingPanel.movementPreview.label'), icon='PREVIEW_RANGE')
         
         row = preview_box.row(align=True)
-        row.prop(context.scene, "eye_rotation_x", text="Vertical Range")
-        row.prop(context.scene, "eye_rotation_y", text="Horizontal Range")
+        row.prop(context.scene, "eye_rotation_x", text=t('EyeTrackingPanel.verticalRange.label'))
+        row.prop(context.scene, "eye_rotation_y", text=t('EyeTrackingPanel.horizontalRange.label'))
         
         # Visual indicator for current eye rotation
         indicator_row = preview_box.row()

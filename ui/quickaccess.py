@@ -71,7 +71,7 @@ class QuickAccessPanel(ToolPanel, bpy.types.Panel):
         # Section header
         header_row = quick_col.row(align=True)
         header_row.scale_y = 0.75
-        header_row.label(text="Quick Actions", icon='SHADERFX')
+        header_row.label(text=t('QuickAccess.quickActions.label'), icon='SHADERFX')
         
         quick_col.separator()
         
@@ -101,7 +101,7 @@ class QuickAccessPanel(ToolPanel, bpy.types.Panel):
         # Section header
         header_row = pose_col.row(align=True)
         header_row.scale_y = 0.75
-        header_row.label(text="Pose Mode", icon='POSE_HLT')
+        header_row.label(text=t('QuickAccess.poseMode.label'), icon='POSE_HLT')
         
         pose_col.separator()
         

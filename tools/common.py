@@ -2406,7 +2406,7 @@ def wrap_dynamic_enum_items(items_func, property_name, sort=True, in_place=True,
         if property_name in property_set:
             # Recursion detected! Return minimal valid result to break the cycle
             # This prevents infinite recursion that causes Blender crashes
-            return [(_empty_enum_identifier, "Loading...", "")]
+            return [(_empty_enum_identifier, t('Common.enum.loading'), "")]
 
         try:
             # Mark this property as being processed

@@ -93,8 +93,8 @@ def simplify_bonename(n):
 @register_wrap
 class DigitigradeTutorialButton(bpy.types.Operator):
     bl_idname = 'cats_manual.digitigrade_tutorial'
-    bl_label = "How to use"
-    bl_description = "This will open a basic tutorial on how to setup and use aim constraints for Digitigrade avatars. Desktop-only!"
+    bl_label = t('CustomModelTutorialButton.label')
+    bl_description = t('DigitigradeTutorialButton.desc')
     bl_options = {'INTERNAL'}
 
     def execute(self, context):
@@ -105,7 +105,7 @@ class DigitigradeTutorialButton(bpy.types.Operator):
 class TwistTutorialButton(bpy.types.Operator):
     bl_idname = 'cats_manual.twist_tutorial'
     bl_label = t('cats_twist.tutorial_button.label')
-    bl_description = "This will open a basic tutorial on how to setup and use these constraints. You can skip to the Unity section."
+    bl_description = t('cats_twist.tutorial_button.desc')
     bl_options = {'INTERNAL'}
 
     def execute(self, context):
@@ -316,7 +316,7 @@ class PoseNamePopup(bpy.types.Operator):
     bl_description = t('PoseNamePopup.desc')
     bl_options = {'INTERNAL'}
 
-    bpy.types.Scene.pose_to_shapekey_name = bpy.props.StringProperty(name="Pose Name")
+    bpy.types.Scene.pose_to_shapekey_name = bpy.props.StringProperty(name=t('PoseNamePopup.poseName'))
 
     def execute(self, context):
         name = context.scene.pose_to_shapekey_name
@@ -975,8 +975,8 @@ class RemoveConstraints(bpy.types.Operator):
 @register_wrap
 class GenerateTwistBones(bpy.types.Operator):
     bl_idname = 'cats_manual.generate_twist_bones'
-    bl_label = "Generate Twist Bones"
-    bl_description = "Attempt to generate twistbones for the selected bones"
+    bl_label = t('GenerateTwistBones.label')
+    bl_description = t('GenerateTwistBones.desc')
     bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
 
     @classmethod
@@ -991,8 +991,8 @@ class GenerateTwistBones(bpy.types.Operator):
         # Check if the property exists in the scene, and create it if it doesn't
         if not hasattr(context.scene, 'generate_twistbones_upper'):
             bpy.types.Scene.generate_twistbones_upper = bpy.props.BoolProperty(
-                name="Generate Twist Bones Upper",
-                description="Generate Twist Bones Upper",
+                name=t('GenerateTwistBones.upper'),
+                description=t('GenerateTwistBones.upper'),
                 default=True
             )
 
@@ -1204,7 +1204,7 @@ class RemoveDoubles(bpy.types.Operator):
             return initial_tris - len(mesh.data.polygons)
             
         except Exception as e:
-            raise ValueError(f"Failed to process mesh {mesh.name}: {str(e)}")
+            raise ValueError(t('RemoveDoubles.error.processMesh', mesh=mesh.name, error=str(e)))
 
     def invoke(self, context, event):
         meshes = Common.get_meshes_objects(mode=3)
@@ -1255,7 +1255,7 @@ class RemoveDoubles(bpy.types.Operator):
                     
                     # Validate result
                     if not mesh.data.vertices or not mesh.data.polygons:
-                        raise ValueError("Mesh data became invalid")
+                        raise ValueError(t('RemoveDoubles.error.invalidMeshData'))
                         
                     # Repair shape keys if needed
                     if Common.has_shapekeys(mesh):
@@ -1291,8 +1291,8 @@ class RemoveDoubles(bpy.types.Operator):
 @register_wrap
 class OptimizeStaticShapekeys(bpy.types.Operator):
     bl_idname = 'cats_manual.optimize_static_shapekeys'
-    bl_label = 'Optimize Static Shapekeys'
-    bl_description = "Move all shapekey-affected geometry into its own mesh, significantly decreasing GPU cost"
+    bl_label = t('OptimizeStaticShapekeys.label')
+    bl_description = t('OptimizeStaticShapekeys.desc')
     bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
 
     @classmethod
@@ -1317,7 +1317,7 @@ class OptimizeStaticShapekeys(bpy.types.Operator):
             objs = meshes
 
         if len([obj for obj in objs if obj.type == 'MESH']) > 1:
-            self.report({'ERROR'}, "Meshes must first be combined for this to be beneficial.")
+            self.report({'ERROR'}, t('OptimizeStaticShapekeys.error.combine'))
 
         for mesh in objs:
             if mesh.type == 'MESH' and mesh.data.shape_keys is not None:
@@ -1370,15 +1370,15 @@ class OptimizeStaticShapekeys(bpy.types.Operator):
         Common.remove_rigidbodies_global()
 
         saved_data.load()
-        self.report({'INFO'}, "Separation complete.")
+        self.report({'INFO'}, t('OptimizeStaticShapekeys.success'))
         return {'FINISHED'}
         
 
 @register_wrap
 class RepairShapekeys(bpy.types.Operator):
     bl_idname = 'cats_manual.repair_shapekeys'
-    bl_label = 'Repair Broken Shapekeys'
-    bl_description = "Attempt to repair messed up shapekeys caused by some Blender operations"
+    bl_label = t('RepairShapekeys.label')
+    bl_description = t('RepairShapekeys.desc')
     bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
 
     @classmethod
@@ -1447,7 +1447,7 @@ class RepairShapekeys(bpy.types.Operator):
         Common.remove_rigidbodies_global()
 
         saved_data.load()
-        self.report({'INFO'}, "Repair complete.")
+        self.report({'INFO'}, t('RepairShapekeys.success'))
         return {'FINISHED'}
 
 
@@ -1617,7 +1617,8 @@ def duplicatebone(b):
 class CreateDigitigradeLegs(bpy.types.Operator):
     """Create digitigrade legs while in edit mode with digitigrade thighs selected."""
     bl_idname = "armature.createdigitigradelegs"
-    bl_label = "Create Digitigrade Legs"
+    bl_label = t('CreateDigitigradeLegs.label')
+    bl_description = t('CreateDigitigradeLegs.desc')
 
     @classmethod
     def poll(cls, context):
@@ -1814,8 +1815,8 @@ class DuplicateBonesButton(bpy.types.Operator):
 @register_wrap
 class ConnectBonesButton(bpy.types.Operator):
     bl_idname = 'cats_manual.connect_bones'
-    bl_label = 'Connect Bones'
-    bl_description = 'Connects all bones with their respective children'
+    bl_label = t('Scene.connect_bones.label')
+    bl_description = t('ConnectBones.desc')
     bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
 
     @classmethod
@@ -1842,11 +1843,11 @@ class ConnectBonesButton(bpy.types.Operator):
             
             Common.fix_bone_orientations(armature)
             
-            self.report({'INFO'}, f'Connected {bones_processed} bones successfully!')
+            self.report({'INFO'}, t('ConnectBones.success', count=bones_processed))
             return {'FINISHED'}
             
         except Exception as e:
-            self.report({'ERROR'}, f'Failed to connect bones: {str(e)}')
+            self.report({'ERROR'}, t('ConnectBones.error.failed', error=str(e)))
             return {'CANCELLED'}
             
         finally:
@@ -1856,9 +1857,8 @@ class ConnectBonesButton(bpy.types.Operator):
 @register_wrap
 class ConvertToValveButton(bpy.types.Operator):
     bl_idname = 'cats_manual.convert_to_valve'
-    bl_label = 'Convert Bones To Valve'
-    bl_description = 'Converts all main bone names to default valve bone names.' \
-                     '\nMake sure your model has the CATS standard bone names from after using Fix Model'
+    bl_label = t('ConvertToValveButton.label')
+    bl_description = t('ConvertToValveButton.desc')
     bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
 
     armature_name = bpy.props.StringProperty(default = "")
@@ -1945,9 +1945,9 @@ class ConvertToValveButton(bpy.types.Operator):
                 translate_bone_fails += 1
 
         if translate_bone_fails > 0:
-            self.report({'INFO'}, "Error! Failed to translate {translate_bone_fails} bones! Make sure your model has standard bone names!")
+            self.report({'INFO'}, t('ConvertToValveButton.error.failedBones', count=translate_bone_fails))
 
-        self.report({'INFO'}, 'Connected all bones!')
+        self.report({'INFO'}, t('ConvertToValveButton.success'))
         return {'FINISHED'}
 
 @register_wrap
@@ -1984,5 +1984,5 @@ class RemoveRigidbodiesJointsOperator(bpy.types.Operator):
             Common.switch('OBJECT')
             Common.delete_hierarchy(bpy.data.objects[obj_name])
 
-        self.report({'INFO'}, 'Removed rigidbodies and joints.')
+        self.report({'INFO'}, t('RemoveRigidbodiesJointsOperator.success'))
         return {'FINISHED'}
