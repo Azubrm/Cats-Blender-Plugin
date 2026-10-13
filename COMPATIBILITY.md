@@ -1,15 +1,36 @@
 # Blender 5.2 compatibility notes
 
 Target: Blender 5.2.2 LTS, as listed on the [official download page](https://www.blender.org/download/)
-on 2026-10-13. Package version: 5.2.1. The manifest accepts Blender 5.0 through
+on 2026-10-13. Package version: 5.2.2. The manifest accepts Blender 5.0 through
 5.2 and stops before 5.3, which is outside this adaptation's scope.
 
 ## Validation status
 
 At the requester's direction, Blender was not launched and no tests, compiler
 checks, extension validation, installation checks, or functional smoke tests
-were run. Changes are based on source inspection, bundled Blender 5.2 Python
-source, and official API documentation. Runtime compatibility remains unverified.
+were run as part of this adaptation. Changes are based on source inspection,
+bundled Blender 5.2 Python source, and official API documentation. The user
+reports that 5.2.1 enables without errors after restarting Blender, but shows
+extension namespace warnings. The 5.2.2 changes have not been runtime tested;
+full functional compatibility remains unverified.
+
+## 5.2.2 extension namespace fix
+
+Blender reported `Policy violation with top level module: mmd_tools_local...`
+and `Policy violation with sys.path: .\\extern_tools`. Cats previously appended
+its bundled dependencies directory to the global Python search path and
+imported MMD Tools as a top-level package.
+
+Version 5.2.2 uses relative imports under the extension package for MMD Tools
+and its bundled OpenCC entry point, removes the search-path modification, and
+uses the full package name for property processing and preference lookup.
+Optional bundled Immersive Scaler lookup also uses a qualified package name;
+separately installed add-ons continue to be discovered through Blender.
+Operator IDs and persistent RNA property names are unchanged.
+
+Save your work and fully restart Blender after updating from an earlier
+version. Reinstalling inside the same process can retain the old top-level
+modules and their warnings until Blender exits.
 
 ## 5.2.1 registration fix
 
@@ -18,8 +39,8 @@ missing when registering `VIEW3D_PT_eye_tracking_legacy_v3`. The registration
 sorter used an unordered set and did not include `bl_parent_id` dependencies.
 Version 5.2.1 preserves declaration order for unrelated classes, registers
 parents before sub-panels, and reports dependency cycles instead of hanging.
-This also covers the custom-model and optimization panel hierarchies. No
-runtime validation of this fix has been performed.
+This also covers the custom-model and optimization panel hierarchies. The user
+subsequently reported successful enabling after a full Blender restart.
 
 ## Installation and updates
 
@@ -57,3 +78,4 @@ and operator name collisions.
 - [Action slots](https://docs.blender.org/api/5.0/bpy.types.ActionSlots.html)
 - [Blender 5.0 pipeline changes, including Collada removal](https://developer.blender.org/docs/release_notes/5.0/pipeline_io/)
 - [Extension Python wheels](https://docs.blender.org/manual/en/latest/advanced/extensions/python_wheels.html)
+- [Extension moderation guidelines](https://developer.blender.org/docs/features/extensions/moderation/guidelines/)

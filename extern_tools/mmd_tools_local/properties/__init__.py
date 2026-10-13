@@ -20,7 +20,7 @@ def patch_library_overridable(prop: "bpy.props._PropertyDeferred") -> "bpy.props
     property_type = prop.keywords["type"]
     # The __annotations__ cannot be inherited. Manually search for base classes.
     for inherited_type in (property_type, *property_type.__bases__):
-        if not inherited_type.__module__.startswith("mmd_tools_local.properties"):
+        if inherited_type.__module__ != __package__ and not inherited_type.__module__.startswith(__package__ + "."):
             continue
         for annotation in inherited_type.__annotations__.values():
             if not isinstance(annotation, bpy.props._PropertyDeferred):

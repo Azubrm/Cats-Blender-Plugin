@@ -1,23 +1,27 @@
 # MIT License
 
-CATS_VERSION = "5.2.1"
+CATS_VERSION = "5.2.2"
 dev_branch = False
 
 import os
 import sys
 
-# Append files to sys path
-file_dir = os.path.join(os.path.dirname(__file__), 'extern_tools')
-if file_dir not in sys.path:
-    sys.path.append(file_dir)
-
 import shutil
 import pathlib
 import requests
 
+from importlib import import_module
 from importlib.util import find_spec
 
 from . import globs
+
+
+def _load_bundled_scaler():
+    package_name = __package__ + '.extern_tools.imscale'
+    if find_spec(package_name) and find_spec(package_name + '.immersive_scaler'):
+        return import_module(package_name + '.immersive_scaler')
+    return None
+
 
 # Check if cats is reloading or started fresh
 if "bpy" not in locals():
@@ -29,9 +33,8 @@ else:
 # Load or reload all cats modules
 if not is_reloading:
     # This order is important
-    import mmd_tools_local
-    if find_spec("imscale") and find_spec("imscale.immersive_scaler"):
-        import imscale.immersive_scaler as imscale
+    from .extern_tools import mmd_tools_local
+    imscale = _load_bundled_scaler()
     from . import updater
     from . import tools
     from . import ui
@@ -40,7 +43,7 @@ else:
     import importlib
     importlib.reload(updater)
     importlib.reload(mmd_tools_local)
-    if 'imscale' in vars():
+    if imscale is not None:
         importlib.reload(imscale)
     importlib.reload(tools)
     importlib.reload(ui)
@@ -228,8 +231,7 @@ def register():
         print('mmd_tools_local is already registered')
 
     # Register immersive scaler if it's loaded
-    if find_spec("imscale") and find_spec("imscale.immersive_scaler"):
-        import imscale.immersive_scaler as imscale
+    if imscale is not None:
         try:
             imscale.register()
         except ModuleNotFoundError:
@@ -298,8 +300,7 @@ def unregister():
         pass
 
     # Unload immersive scaler
-    if find_spec("imscale") and find_spec("imscale.immersive_scaler"):
-        import imscale.immersive_scaler as imscale
+    if imscale is not None:
         try:
             imscale.unregister()
         except ModuleNotFoundError:
@@ -326,10 +327,6 @@ def unregister():
     except AttributeError:
         print('shapekey button was not registered')
         pass
-
-    # Remove folder from sys path
-    if file_dir in sys.path:
-        sys.path.remove(file_dir)
 
     tools.settings.stop_apply_settings_threads()
 

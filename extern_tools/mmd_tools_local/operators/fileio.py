@@ -12,7 +12,7 @@ import bpy
 from bpy.types import Operator, OperatorFileListElement
 from bpy_extras.io_utils import ExportHelper, ImportHelper
 
-from .. import auto_scene_setup
+from .. import PACKAGE_NAME, auto_scene_setup
 from ..core.camera import MMDCamera
 from ..core.light import MMDLight
 from ..core.model import FnModel, Model
@@ -61,14 +61,7 @@ def _update_types(cls, prop):
 
 def get_addon_package_name():
     """Get the root package name for addon preferences"""
-    current_package = __package__
-    parts = current_package.split(".")
-    try:
-        index = parts.index("mmd_tools_local")
-        return ".".join(parts[: index + 1])
-    except ValueError:
-        pass
-    return current_package
+    return PACKAGE_NAME
 
 
 def get_preset_directories(operator_bl_idname):
