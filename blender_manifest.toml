@@ -1,16 +1,40 @@
 schema_version = "1.0.0"
 
-# Unoffical Cats Blender Plugin Extenstion
+# Cats Blender Plugin extension for Blender 5.2
 id = "cats_blender_plugin"
-version = "5.0.2"
-name = "Unoffical Cats Blender Plugin"
-tagline = "A tool designed to shorten steps needed to import and optimize models into VRChat"
-maintainer = "Unoffical Cats Team <hello@yusarina.xyz>"
+version = "5.2.0"
+name = "Cats Blender Plugin"
+tagline = "Import and optimize avatar models for VRChat"
+maintainer = "Azubrm"
 type = "add-on"
-permissions = ["files", "network"]
-website = "https://github.com/teamneoneko/Cats-Blender-Plugin-Unofficial-"
+website = "https://github.com/Azubrm/Cats-Blender-Plugin"
 tags = ["3D View", "Modeling", "Mesh", "Object"]
 blender_version_min = "5.0.0"
+blender_version_max = "5.3.0"
 license = [
-  "SPDX:MIT",
+  "SPDX:GPL-3.0-or-later",
+]
+wheels = [
+  "./wheels/certifi-2026.7.22-py3-none-any.whl",
+  "./wheels/charset_normalizer-3.5.2-py3-none-any.whl",
+  "./wheels/idna-3.20-py3-none-any.whl",
+  "./wheels/requests-2.34.2-py3-none-any.whl",
+  "./wheels/urllib3-2.8.0-py3-none-any.whl",
+]
+
+[permissions]
+files = "Import and export avatars, textures, settings and translation dictionaries"
+network = "Translate model names and download optional translation dictionaries"
+
+[build]
+paths_exclude_pattern = [
+  ".git/",
+  ".github/",
+  "__pycache__/",
+  "*.pyc",
+  "tests/",
+  "dist/",
+  "downloads/",
+  "resources/settings.json",
+  "resources/dictionary_google.json",
 ]

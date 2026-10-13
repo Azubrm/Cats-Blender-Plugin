@@ -1,0 +1,7 @@
+# Pure-Python wheels bundled for Blender 5.0 (Python 3.11) and
+# Blender 5.1/5.2 (Python 3.13); no platform-specific binaries.
+certifi==2026.7.22
+charset-normalizer==3.5.2
+idna==3.20
+requests==2.34.2
+urllib3==2.8.0

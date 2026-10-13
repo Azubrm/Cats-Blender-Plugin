@@ -66,11 +66,11 @@ class RigidBodyMaterial:
             mat.specular_intensity = 0
             if len(mat.diffuse_color) > 3:
                 mat.diffuse_color[3] = 0.5
-            mat.blend_method = "BLEND"
+            mat.surface_render_method = "BLENDED"
             if hasattr(mat, "shadow_method"):
                 mat.shadow_method = "NONE"
             mat.use_backface_culling = True
-            mat.show_transparent_back = False
+            mat.use_transparency_overlap = False
             mat.use_nodes = True
             nodes, links = mat.node_tree.nodes, mat.node_tree.links
             nodes.clear()

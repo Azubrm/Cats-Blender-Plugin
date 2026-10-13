@@ -5,7 +5,6 @@ import os
 import bpy
 import copy
 import json
-import pathlib
 import traceback
 import collections
 import requests.exceptions
@@ -21,22 +20,20 @@ from .. import globs
 # from ..googletrans import Translator  # TODO Remove this
 from ..extern_tools.google_trans_new.google_trans_new import google_translator
 from .translations import t
+from . import storage
 
 from mmd_tools_local import translations as mmd_translations
 
 dictionary = {}
 dictionary_google = {}
 
-main_dir = pathlib.Path(os.path.dirname(__file__)).parent.resolve()
-resources_dir = os.path.join(str(main_dir), "resources")
-dictionary_file = os.path.join(resources_dir, "dictionary.json")
-dictionary_google_file = os.path.join(resources_dir, "dictionary_google.json")
+dictionary_google_file = storage.user_file("dictionary_google.json")
 
 def get_cats_dir(context):
-    prefs = context.preferences.addons["cats-blender-plugin"].preferences
-    
-    if prefs.custom_shapekeys_export_dir: 
-        return prefs.custom_shapekeys_export_dir
+    addon = context.preferences.addons.get(storage.ADDON_PACKAGE)
+    export_dir = getattr(addon.preferences, 'custom_shapekeys_export_dir', '') if addon else ''
+    if export_dir:
+        return export_dir
     
     # Fallback to default cats directory
     return os.path.join(bpy.utils.user_resource('DATAFILES'), "cats") 
@@ -511,7 +508,7 @@ def load_translations():
 
     # Load internal dictionary
     try:
-        with open(dictionary_file, encoding="utf8") as file:
+        with open(storage.readable_resource("dictionary.json"), encoding="utf8") as file:
             temp_dict = json.load(file, object_pairs_hook=collections.OrderedDict)
             dict_found = True
             # print('DICTIONARY LOADED!')
@@ -524,7 +521,7 @@ def load_translations():
 
     # Load local google dictionary and add it to the temp dict
     try:
-        with open(dictionary_google_file, encoding="utf8") as file:
+        with open(storage.readable_resource("dictionary_google.json"), encoding="utf8") as file:
             global dictionary_google
             dictionary_google = json.load(file, object_pairs_hook=collections.OrderedDict)
 
@@ -542,6 +539,9 @@ def load_translations():
                         continue
 
                     temp_dict[name] = trans
+
+            if not os.path.isfile(dictionary_google_file):
+                save_google_dict()
 
             # print('GOOGLE DICTIONARY LOADED!')
     except FileNotFoundError:
@@ -779,7 +779,7 @@ def reset_google_dict():
 
 
 def save_google_dict():
-    with open(dictionary_google_file, 'w', encoding="utf8") as outfile:
+    with open(storage.user_file("dictionary_google.json", create=True), 'w', encoding="utf8") as outfile:
         json.dump(dictionary_google, outfile, ensure_ascii=False, indent=4)
 
 

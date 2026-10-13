@@ -1,7 +1,7 @@
 # MIT License
 
-CATS_VERSION = "5.0.2.2"
-dev_branch = True
+CATS_VERSION = "5.2.0"
+dev_branch = False
 
 import os
 import sys
@@ -163,16 +163,10 @@ def remove_corrupted_files():
 
 
 def check_unsupported_blender_versions():
-    # Don't allow Blender versions older than 4.5
-    if bpy.app.version < (5, 0):
-        unregister()
-        sys.tracebacklimit = 0
-        raise ImportError(t('Main.error.29unsupportedVersion'))
-     
-    # Don't allow 5.0+
-    if bpy.app.version >= (5, 1):
-        sys.tracebacklimit = 0
-        raise ImportError(t('Main.error.40unsupportedVersion'))
+    # Keep this range in sync with blender_manifest.toml. Registration has
+    # not started here, so there is nothing to unregister on rejection.
+    if not (5, 0, 0) <= bpy.app.version < (5, 3, 0):
+        raise ImportError('This Cats build targets Blender 5.0 through 5.2.')
 
 def set_cats_version_string():
     version_parts = CATS_VERSION.split(".")
@@ -199,8 +193,9 @@ def register():
     # Check for unsupported Blender versions
     check_unsupported_blender_versions()
 
-    # Check for faulty CATS installations
-    remove_corrupted_files()
+    # Blender's extension installer owns installation and replacement. The
+    # legacy cleanup scans the parent directory and can delete sibling data
+    # when this package is installed in an extension repository.
 
     # Set cats version string
     version_str = set_cats_version_string()
@@ -243,7 +238,7 @@ def register():
     # Register all classes
     count = 0
     tools.register.order_classes()
-    for cls in tools.register.__bl_classes:
+    for cls in tools.register.__bl_ordered_classes:
         try:
             bpy.utils.register_class(cls)
             count += 1
@@ -270,7 +265,6 @@ def register():
     else:
         pass  # From 2.83 on this is no longer needed
     tools.common.get_user_preferences().filepaths.use_file_compression = True
-    bpy.context.window_manager.addon_support = {'OFFICIAL', 'COMMUNITY'}
 
     # Add shapekey button to shapekey menu
     bpy.types.MESH_MT_shape_key_context_menu.append(tools.shapekey.addToShapekeyMenu)
@@ -328,7 +322,7 @@ def unregister():
 
     # Remove shapekey button from shapekey menu
     try:
-        bpy.types.MESH_MT_shape_key_specials.remove(tools.shapekey.addToShapekeyMenu)
+        bpy.types.MESH_MT_shape_key_context_menu.remove(tools.shapekey.addToShapekeyMenu)
     except AttributeError:
         print('shapekey button was not registered')
         pass

@@ -9,6 +9,7 @@ from typing import List, Optional, Set
 import bpy
 from mathutils import Euler, Quaternion
 
+from ...compat import action_compat
 from .. import vmd
 from ..camera import MMDCamera
 from ..light import MMDLight
@@ -242,7 +243,7 @@ class VMDExporter:
         anim_bones = {}
         rePath = re.compile(r'^pose\.bones\["(.+)"\]\.([a-z_]+)$')
         prop_rotation_map = {"QUATERNION": "rotation_quaternion", "AXIS_ANGLE": "rotation_axis_angle"}
-        for fcurve in animation_data.action.fcurves:
+        for fcurve in action_compat.get_animation_fcurves(animation_data):
             m = rePath.match(fcurve.data_path)
             if m is None:
                 continue
@@ -330,7 +331,7 @@ class VMDExporter:
             return key_blocks.get(eval(key), None)
 
         rePath = re.compile(r"^key_blocks\[(.+)\]\.value$")
-        for fcurve in animation_data.action.fcurves:
+        for fcurve in action_compat.get_animation_fcurves(animation_data):
             m = rePath.match(fcurve.data_path)
             if m is None:
                 continue
@@ -369,7 +370,7 @@ class VMDExporter:
         if getattr(root, "mmd_type", None) == "ROOT":
             animation_data = root.animation_data
             if animation_data and animation_data.action:
-                for fcurve in animation_data.action.fcurves:
+                for fcurve in action_compat.get_animation_fcurves(animation_data):
                     if fcurve.data_path == "mmd_root.show_meshes":
                         prop_curves[0].setFCurve(fcurve)
                         break
@@ -411,7 +412,7 @@ class VMDExporter:
 
         animation_data = mmd_cam.animation_data
         if animation_data and animation_data.action:
-            for fcurve in animation_data.action.fcurves:
+            for fcurve in action_compat.get_animation_fcurves(animation_data):
                 if fcurve.data_path == "location":  # x, y, z
                     cam_curves[fcurve.array_index].setFCurve(fcurve)
                 elif fcurve.data_path == "rotation_euler":  # rx, ry, rz
@@ -423,7 +424,7 @@ class VMDExporter:
 
         animation_data = camera.animation_data
         if animation_data and animation_data.action:
-            for fcurve in animation_data.action.fcurves:
+            for fcurve in action_compat.get_animation_fcurves(animation_data):
                 if fcurve.data_path == "location" and fcurve.array_index == 1:  # distance
                     cam_curves[8].setFCurve(fcurve)
 
@@ -472,13 +473,13 @@ class VMDExporter:
 
         animation_data = light.data.animation_data
         if animation_data and animation_data.action:
-            for fcurve in animation_data.action.fcurves:
+            for fcurve in action_compat.get_animation_fcurves(animation_data):
                 if fcurve.data_path == "color":  # r, g, b
                     light_curves[fcurve.array_index].setFCurve(fcurve)
 
         animation_data = light.animation_data
         if animation_data and animation_data.action:
-            for fcurve in animation_data.action.fcurves:
+            for fcurve in action_compat.get_animation_fcurves(animation_data):
                 if fcurve.data_path == "location":  # x, y, z
                     light_curves[3 + fcurve.array_index].setFCurve(fcurve)
 

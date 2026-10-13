@@ -51,6 +51,10 @@ class VPDImporter:
         else:
             action = armObj.animation_data.action
 
+        slot = action_compat.ensure_action_slot(action, armObj)
+        action_compat.assign_action_to_datablock(armObj, action, slot)
+        action_fcurves = action_compat.get_action_fcurves(action, slot)
+
         # Get the current frame
         current_frame = bpy.context.scene.frame_current
 
@@ -68,15 +72,15 @@ class VPDImporter:
 
                 data_path = f'pose.bones["{bone.name}"].location'
                 for axis_i in range(3):
-                    fcurves[axis_i] = action.fcurves.find(data_path, index=axis_i)
+                    fcurves[axis_i] = action_fcurves.find(data_path, index=axis_i)
                     if fcurves[axis_i] is None:
-                        fcurves[axis_i] = action.fcurves.new(data_path=data_path, index=axis_i, action_group=bone.name)
+                        fcurves[axis_i] = action_fcurves.new(data_path=data_path, index=axis_i, action_group=bone.name)
 
                 data_path = f'pose.bones["{bone.name}"].{data_path_rot}'
                 for axis_i in range(len(bone_rotation)):
-                    fcurves[3 + axis_i] = action.fcurves.find(data_path, index=axis_i)
+                    fcurves[3 + axis_i] = action_fcurves.find(data_path, index=axis_i)
                     if fcurves[3 + axis_i] is None:
-                        fcurves[3 + axis_i] = action.fcurves.new(data_path=data_path, index=axis_i, action_group=bone.name)
+                        fcurves[3 + axis_i] = action_fcurves.new(data_path=data_path, index=axis_i, action_group=bone.name)
 
                 for axis_i in range(3):
                     fcurves[axis_i].keyframe_points.insert(current_frame, bone.location[axis_i])
@@ -111,6 +115,10 @@ class VPDImporter:
         else:
             action = meshObj.data.shape_keys.animation_data.action
 
+        slot = action_compat.ensure_action_slot(action, meshObj.data.shape_keys)
+        action_compat.assign_action_to_datablock(meshObj.data.shape_keys, action, slot)
+        action_fcurves = action_compat.get_action_fcurves(action, slot)
+
         # Get current frame
         current_frame = bpy.context.scene.frame_current
 
@@ -127,9 +135,9 @@ class VPDImporter:
 
             # Create or get FCurve
             data_path = f'key_blocks["{shape_key.name}"].value'
-            fcurve = action.fcurves.find(data_path)
+            fcurve = action_fcurves.find(data_path)
             if fcurve is None:
-                fcurve = action.fcurves.new(data_path=data_path)
+                fcurve = action_fcurves.new(data_path=data_path)
 
             # Add keyframe
             fcurve.keyframe_points.insert(current_frame, m.weight)

@@ -43,11 +43,14 @@ resources_dir = os.path.join(main_dir, "resources")
 ignore_ver_file = os.path.join(resources_dir, "ignore_version.txt")
 no_auto_ver_check_file = os.path.join(resources_dir, "no_auto_ver_check.txt")
 
-# Get package name, important for panel in user preferences
-package_name = ''
-for mod in addon_utils.modules():
-    if mod.bl_info['name'] == 'Cats Blender Plugin':
-        package_name = mod.__name__
+# Extensions use a fully qualified package name, e.g.
+# bl_ext.user_default.cats_blender_plugin. Display names are not identifiers.
+package_name = __package__
+
+# This compatibility build must not be replaced by the archived upstream's
+# Blender 5.0 releases. Install new extension ZIPs through Blender instead.
+SELF_UPDATE_ENABLED = False
+MANUAL_UPDATE_MESSAGE = 'Install Cats updates from a ZIP in Blender Preferences.'
 
 # Icons for UI
 ICON_URL = 'URL'
@@ -357,6 +360,8 @@ class UpdateNotificationPopup(bpy.types.Operator):
 
 def check_for_update_background(check_on_startup=False):
     global is_checking_for_update, checked_on_startup
+    if not SELF_UPDATE_ENABLED:
+        return
     if check_on_startup and checked_on_startup:
         # print('ALREADY CHECKED ON STARTUP')
         return
@@ -377,6 +382,8 @@ def check_for_update_background(check_on_startup=False):
 
 
 def check_for_update():
+    if not SELF_UPDATE_ENABLED:
+        return
     print('Checking for Cats update...')
 
     # Get all releases from Github
@@ -539,6 +546,8 @@ def show_update_notification(scene):  # One argument in necessary for some reaso
 
 
 def update_now(version=None, latest=False, dev=False):
+    if not SELF_UPDATE_ENABLED:
+        raise RuntimeError(MANUAL_UPDATE_MESSAGE)
     if fake_update:
         finish_update()
         return
@@ -559,6 +568,8 @@ def update_now(version=None, latest=False, dev=False):
 
 
 def download_file(update_url):
+    if not SELF_UPDATE_ENABLED:
+        raise RuntimeError(MANUAL_UPDATE_MESSAGE)
     # Load all the directories and files
     update_zip_file = os.path.join(downloads_dir, "cats-update.zip")
 
@@ -806,6 +817,11 @@ def draw_update_notification_panel(layout):
 
 def draw_updater_panel(context, layout, user_preferences=False):
     col = layout.column(align=True)
+
+    if not SELF_UPDATE_ENABLED:
+        col.label(text='Cats ' + current_version_str)
+        col.label(text='Install updates from a ZIP in Blender Preferences.', icon='INFO')
+        return
 
     scale_big = 2
     scale_small = 1.2

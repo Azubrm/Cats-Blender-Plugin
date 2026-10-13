@@ -169,7 +169,7 @@ def start_pose_mode(reset_pose=True):
                     shape_key.value = 0
 
     for pb in armature.pose.bones:
-        pb.select = True
+        Common.set_pose_bone_selected(pb, True)
 
     if reset_pose:
         bpy.ops.pose.rot_clear()
@@ -180,11 +180,11 @@ def start_pose_mode(reset_pose=True):
     if bone is not None:
         for pb in armature.pose.bones:
             if bone.name != pb.name:
-                pb.select = False
+                Common.set_pose_bone_selected(pb, False)
     else:
         for index, pb in enumerate(armature.pose.bones):
             if index != 0:
-                pb.select = False
+                Common.set_pose_bone_selected(pb, False)
         bpy.ops.wm.tool_set_by_id(name="builtin.rotate")
 
     saved_data.load(hide_only=True)
@@ -236,8 +236,8 @@ def stop_pose_mode(reset_pose=True):
     bpy.ops.object.hide_view_clear()
 
     for pb in armature.pose.bones:
-        pb.hide = False
-        pb.select = True
+        Common.set_pose_bone_hidden(pb, False)
+        Common.set_pose_bone_selected(pb, True)
 
     if reset_pose:
         bpy.ops.pose.rot_clear()
@@ -245,7 +245,7 @@ def stop_pose_mode(reset_pose=True):
         bpy.ops.pose.transforms_clear()
 
     for pb in armature.pose.bones:
-        pb.select = False
+        Common.set_pose_bone_selected(pb, False)
 
     armature = Common.set_default_stage()
     Common.remove_rigidbodies_global()

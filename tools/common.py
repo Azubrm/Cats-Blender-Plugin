@@ -42,6 +42,18 @@ def version_3_6_or_older():
     return bpy.app.version < (3, 7)
 
 
+def set_pose_bone_selected(pose_bone, selected):
+    # Blender 5.0 moved pose selection from Bone to PoseBone.
+    target = pose_bone if hasattr(pose_bone, 'select') else pose_bone.bone
+    target.select = selected
+
+
+def set_pose_bone_hidden(pose_bone, hidden):
+    # EditBone.hide remains separate from the pose visibility state.
+    target = pose_bone if hasattr(pose_bone, 'hide') else pose_bone.bone
+    target.hide = hidden
+
+
 def get_objects():
     return bpy.context.view_layer.objects
 
@@ -1622,7 +1634,6 @@ def has_shapekeys(mesh_obj: Object) -> bool:
     return mesh_obj.data.shape_keys is not None
 
 
-@lru_cache(maxsize=None)
 def _get_shape_key_co(shape_key: ShapeKey) -> np.ndarray:
     return np.array([v.co for v in shape_key.data])
 
@@ -1634,9 +1645,10 @@ def remove_doubles(mesh_obj: Object, threshold: float, save_shapes: bool = True)
     mesh = mesh_obj.data
 
     if not has_shapekeys(mesh_obj) or len(mesh.shape_keys.key_blocks) == 1:
-        return 0
+        save_shapes = False
 
     pre_polygons = len(mesh.polygons)
+    vertex_selection = None
 
     if save_shapes:
         vertex_selection = np.full(len(mesh.vertices), True, dtype=bool)
@@ -1653,40 +1665,19 @@ def remove_doubles(mesh_obj: Object, threshold: float, save_shapes: bool = True)
         if not vertex_selection.any():
             return 0
 
-        if vertex_selection.all():
-            save_shapes = False
-        else:
-            bpy.context.view_layer.objects.active = mesh_obj
-            bpy.ops.object.mode_set(mode='EDIT')
-            verts = list(bmesh.from_edit_mesh(mesh).verts)
-            for v in verts:
-                v.select = vertex_selection[v.index]
-            bpy.ops.object.mode_set(mode='OBJECT')
-            bpy.context.view_layer.update()
-    else:
-        bmesh.ops.select_all(bm, action='DESELECT')
-
     bm = bmesh.new()
-    bm.from_mesh(mesh)
-    if save_shapes:
-        verts = [v for v in bm.verts if v.select]
-    else:
-        verts = bm.verts
-
-    total_verts = len(verts)
-    progress_steps = 100
-    progress_step_size = total_verts // progress_steps
-    progress = 0
-
-    bmesh.ops.remove_doubles(bm, verts=verts, dist=threshold)
-
-    while progress < total_verts:
-        bm.select_flush(True)
-        bpy.context.view_layer.update()
-        bpy.context.window_manager.progress_update(progress / total_verts)
-        progress += progress_step_size
-
-    bm.to_mesh(mesh)
+    try:
+        bm.from_mesh(mesh)
+        bm.verts.index_update()
+        if vertex_selection is not None:
+            verts = [v for v in bm.verts if vertex_selection[v.index]]
+        else:
+            verts = list(bm.verts)
+        bmesh.ops.remove_doubles(bm, verts=verts, dist=threshold)
+        bm.to_mesh(mesh)
+        mesh.update()
+    finally:
+        bm.free()
 
     return pre_polygons - len(mesh.polygons)
 

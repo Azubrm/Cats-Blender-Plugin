@@ -681,8 +681,8 @@ class PMXImporter:
                 check[verts] = mi
             elif check[verts] < mi:
                 logging.debug(" >> fix blend method of material: %s", materials[mi].name)
-                materials[mi].blend_method = "BLEND"
-                materials[mi].show_transparent_back = False
+                materials[mi].surface_render_method = "BLENDED"
+                materials[mi].use_transparency_overlap = False
                 mi_skip = mi
 
     def __importVertexMorphs(self):

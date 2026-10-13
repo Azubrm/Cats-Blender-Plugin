@@ -422,19 +422,21 @@ class VMDImporter:
 
         return _ConverterWrap
 
-    def __assign_action(self, target: Union[bpy.types.ID, HasAnimationData], action: bpy.types.Action):
+    def __assign_action(self, target: Union[bpy.types.ID, HasAnimationData], action: bpy.types.Action, slot=None):
         if target.animation_data is None:
             target.animation_data_create()
 
         if not self.__use_nla:
-            if target.animation_data.action:
+            if target.animation_data.action and target.animation_data.action != action:
                 return target.animation_data.action
-            action_compat.assign_action_to_datablock(target, action)
+            action_compat.assign_action_to_datablock(target, action, slot)
         else:
             frame_current = bpy.context.scene.frame_current
             target_track: bpy.types.NlaTrack = target.animation_data.nla_tracks.new()
             target_track.name = action.name
             target_strip = target_track.strips.new(action.name, frame_current, action)
+            if action_compat.IS_BLENDER_50_UP:
+                target_strip.action_slot = slot if slot is not None else action_compat.ensure_action_slot(action, target)
             target_strip.blend_type = "COMBINE"
 
         return action
@@ -452,22 +454,22 @@ class VMDImporter:
 
         return bpy.data.actions.new(name=action_name)
 
-    def __get_or_create_fcurve(self, action, data_path, index, action_group_name="", id_type="OBJECT"):
+    def __get_or_create_fcurve(self, action, data_path, index, action_group_name="", id_type="OBJECT", slot=None):
         """Get existing F-Curve or create a new one."""
-        fcurve = action.fcurves.find(data_path, index=index)
+        fcurve = action_compat.get_action_fcurves(action, slot).find(data_path, index=index)
 
         if fcurve is None:
-            fcurve = action_compat.new_fcurve(action, data_path, index=index, group_name=action_group_name, id_type=id_type)
+            fcurve = action_compat.new_fcurve(action, data_path, index=index, group_name=action_group_name, id_type=id_type, slot=slot)
         # Ensure F-Curve belongs to the correct action group
         elif action_group_name and (fcurve.group is None or fcurve.group.name != action_group_name):
             # Find or create the action group
             group = None
-            for g in action.groups:
+            for g in action_compat.get_action_groups(action, slot):
                 if g.name == action_group_name:
                     group = g
                     break
             if group is None:
-                group = action.groups.new(action_group_name)
+                group = action_compat.get_action_groups(action, slot).new(action_group_name)
             fcurve.group = group
 
         return fcurve
@@ -480,6 +482,8 @@ class VMDImporter:
 
         action_name = action_name or armObj.name
         action = self.__get_or_create_action(armObj, action_name)
+        slot = action_compat.ensure_action_slot(action, armObj)
+        action_fcurves = action_compat.get_action_fcurves(action, slot)
 
         extra_frame = 1 if self.__frame_margin > 0 else 0
 
@@ -520,10 +524,10 @@ class VMDImporter:
             default_values = tuple(bone.location) + tuple(bone_rotation)
             data_path = f'pose.bones["{bone.name}"].location'
             for axis_i in range(3):
-                fcurves[axis_i] = self.__get_or_create_fcurve(action, data_path, axis_i, bone.name)
+                fcurves[axis_i] = self.__get_or_create_fcurve(action, data_path, axis_i, bone.name, slot=slot)
             data_path = f'pose.bones["{bone.name}"].{data_path_rot}'
             for axis_i in range(len(bone_rotation)):
-                fcurves[3 + axis_i] = self.__get_or_create_fcurve(action, data_path, axis_i, bone.name)
+                fcurves[3 + axis_i] = self.__get_or_create_fcurve(action, data_path, axis_i, bone.name, slot=slot)
 
             for i in range(len(default_values)):
                 c = fcurves[i]
@@ -591,7 +595,7 @@ class VMDImporter:
                         self.__setInterpolation(interp[idx : idx + 16 : 4], prev_kp, kp)
                 prev_kps = curr_kps
 
-        for fcurve in action.fcurves:
+        for fcurve in action_fcurves:
             fcurve.update()  # After keyframe_points.add(), call update() to sort and remove duplicate keyframes
             self.__fixFcurveHandles(fcurve)
 
@@ -607,9 +611,9 @@ class VMDImporter:
                     if not bone:
                         continue
 
-                    self.__keyframe_insert(action.fcurves, f'pose.bones["{bone.name}"].mmd_ik_toggle', frame, enable)
+                    self.__keyframe_insert(action_fcurves, f'pose.bones["{bone.name}"].mmd_ik_toggle', frame, enable)
 
-        self.__assign_action(armObj, action)
+        self.__assign_action(armObj, action, slot)
 
         # Ensure IK toggle state is set based on the first frame of VMD animation
         if len(propertyAnim) > 0:
@@ -635,6 +639,7 @@ class VMDImporter:
 
         action_name = action_name or meshObj.name
         action = self.__get_or_create_action(meshObj.data.shape_keys, action_name)
+        slot = action_compat.ensure_action_slot(action, meshObj.data.shape_keys)
 
         mirror_map = _MirrorMapper(meshObj.data.shape_keys.key_blocks) if self.__mirror else {}
         shapeKeyDict = {k: mirror_map.get(k, v) for k, v in meshObj.data.shape_keys.key_blocks.items()}
@@ -663,7 +668,7 @@ class VMDImporter:
             logging.info("(mesh) frames:%5d  name: %s", len(keyFrames), name)
             shapeKey = shapeKeyDict[name]
             data_path = f'key_blocks["{shapeKey.name}"].value'
-            fcurve = self.__get_or_create_fcurve(action, data_path, 0, id_type="KEY")
+            fcurve = self.__get_or_create_fcurve(action, data_path, 0, id_type="KEY", slot=slot)
 
             original_count = len(fcurve.keyframe_points)
             fcurve.keyframe_points.add(len(keyFrames))
@@ -679,7 +684,7 @@ class VMDImporter:
 
             fcurve.update()
 
-        self.__assign_action(meshObj.data.shape_keys, action)
+        self.__assign_action(meshObj.data.shape_keys, action, slot)
 
     def __assignToRoot(self, rootObj, action_name=None):
         propertyAnim = self.__vmdFile.propertyAnimation
@@ -689,12 +694,14 @@ class VMDImporter:
 
         action_name = action_name or rootObj.name
         action = self.__get_or_create_action(rootObj, action_name)
+        slot = action_compat.ensure_action_slot(action, rootObj)
+        action_fcurves = action_compat.get_action_fcurves(action, slot)
 
         logging.debug("(Display) list(frame, show): %s", [(keyFrame.frame_number, bool(keyFrame.visible)) for keyFrame in propertyAnim])
         for keyFrame in propertyAnim:
-            self.__keyframe_insert(action.fcurves, "mmd_root.show_meshes", keyFrame.frame_number + self.__frame_start + self.__frame_margin, float(keyFrame.visible))
+            self.__keyframe_insert(action_fcurves, "mmd_root.show_meshes", keyFrame.frame_number + self.__frame_start + self.__frame_margin, float(keyFrame.visible))
 
-        self.__assign_action(rootObj, action)
+        self.__assign_action(rootObj, action, slot)
 
     @staticmethod
     def detectCameraChange(fcurve):
@@ -720,6 +727,8 @@ class VMDImporter:
         action_name = action_name or mmdCamera.name
         parent_action = self.__get_or_create_action(mmdCamera, action_name)
         distance_action = self.__get_or_create_action(cameraObj, action_name + "_dis")
+        parent_slot = action_compat.ensure_action_slot(parent_action, mmdCamera)
+        distance_slot = action_compat.ensure_action_slot(distance_action, cameraObj)
 
         def _identity(i):
             return i
@@ -728,11 +737,11 @@ class VMDImporter:
         if self.__mirror:
             _loc, _rot = _MirrorMapper.get_location, _MirrorMapper.get_rotation3
 
-        fcurves = [self.__get_or_create_fcurve(parent_action, "location", i) for i in range(3)]  # x, y, z
-        fcurves.extend(self.__get_or_create_fcurve(parent_action, "rotation_euler", i) for i in range(3))  # rx, ry, rz
-        fcurves.append(self.__get_or_create_fcurve(parent_action, "mmd_camera.angle", 0))  # fov
-        fcurves.append(self.__get_or_create_fcurve(parent_action, "mmd_camera.is_perspective", 0))  # persp
-        fcurves.append(self.__get_or_create_fcurve(distance_action, "location", 1))  # dis
+        fcurves = [self.__get_or_create_fcurve(parent_action, "location", i, slot=parent_slot) for i in range(3)]  # x, y, z
+        fcurves.extend(self.__get_or_create_fcurve(parent_action, "rotation_euler", i, slot=parent_slot) for i in range(3))  # rx, ry, rz
+        fcurves.append(self.__get_or_create_fcurve(parent_action, "mmd_camera.angle", 0, slot=parent_slot))  # fov
+        fcurves.append(self.__get_or_create_fcurve(parent_action, "mmd_camera.is_perspective", 0, slot=parent_slot))  # persp
+        fcurves.append(self.__get_or_create_fcurve(distance_action, "location", 1, slot=distance_slot))  # dis
 
         new_keyframe_iterators = []
         for c in fcurves:
@@ -766,8 +775,8 @@ class VMDImporter:
             if self.__detect_camera_changes:
                 self.detectCameraChange(fcurve)
 
-        self.__assign_action(mmdCamera, parent_action)
-        self.__assign_action(cameraObj, distance_action)
+        self.__assign_action(mmdCamera, parent_action, parent_slot)
+        self.__assign_action(cameraObj, distance_action, distance_slot)
 
     @staticmethod
     def detectLightChange(fcurve):
@@ -794,6 +803,10 @@ class VMDImporter:
         action_name = action_name or mmdLight.name
         color_action = self.__get_or_create_action(lightObj.data, action_name + "_color")
         location_action = self.__get_or_create_action(lightObj, action_name + "_loc")
+        color_slot = action_compat.ensure_action_slot(color_action, lightObj.data)
+        location_slot = action_compat.ensure_action_slot(location_action, lightObj)
+        color_fcurves = action_compat.get_action_fcurves(color_action, color_slot)
+        location_fcurves = action_compat.get_action_fcurves(location_action, location_slot)
 
         def _identity(i):
             return i
@@ -801,15 +814,15 @@ class VMDImporter:
         _loc = _MirrorMapper.get_location if self.__mirror else _identity
         for keyFrame in lightAnim:
             frame = keyFrame.frame_number + self.__frame_start + self.__frame_margin
-            self.__keyframe_insert(color_action.fcurves, "color", frame, Vector(keyFrame.color))
-            self.__keyframe_insert(location_action.fcurves, "location", frame, Vector(_loc(keyFrame.direction)).xzy * -1)
+            self.__keyframe_insert(color_fcurves, "color", frame, Vector(keyFrame.color))
+            self.__keyframe_insert(location_fcurves, "location", frame, Vector(_loc(keyFrame.direction)).xzy * -1)
 
         if self.__detect_light_changes:
-            for fcurve in location_action.fcurves:
+            for fcurve in location_fcurves:
                 self.detectLightChange(fcurve)
 
-        self.__assign_action(lightObj.data, color_action)
-        self.__assign_action(lightObj, location_action)
+        self.__assign_action(lightObj.data, color_action, color_slot)
+        self.__assign_action(lightObj, location_action, location_slot)
 
     def assign(self, obj, action_name=None):
         if obj is None:

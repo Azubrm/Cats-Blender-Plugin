@@ -5,7 +5,6 @@ import bpy
 import json
 import copy
 import time
-import pathlib
 import collections
 import threading
 from threading import Thread, Event
@@ -18,10 +17,9 @@ from ..tools.register import register_wrap
 from ..extern_tools.google_trans_new.google_trans_new import google_translator
 from . import translate as Translate
 from .translations import t
+from . import storage
 
-main_dir = pathlib.Path(os.path.dirname(__file__)).parent.resolve()
-resources_dir = os.path.join(str(main_dir), "resources")
-settings_file = os.path.join(resources_dir, "settings.json")
+settings_file = storage.user_file("settings.json")
 
 settings_data = None
 settings_data_unchanged = None
@@ -94,7 +92,7 @@ def load_settings():
     global settings_data, settings_data_unchanged
 
     try:
-        with open(settings_file, encoding="utf8") as file:
+        with open(storage.readable_resource("settings.json"), encoding="utf8") as file:
             settings_data = json.load(file, object_pairs_hook=collections.OrderedDict)
     except FileNotFoundError:
         print("SETTINGS FILE NOT FOUND!")
@@ -142,9 +140,11 @@ def load_settings():
         return
 
     settings_data_unchanged = copy.deepcopy(settings_data)
+    if not os.path.isfile(settings_file):
+        save_settings()
 
 def save_settings():
-    with open(settings_file, 'w', encoding="utf8") as outfile:
+    with open(storage.user_file("settings.json", create=True), 'w', encoding="utf8") as outfile:
         json.dump(settings_data, outfile, ensure_ascii=False, indent=4)
 
 def reset_settings(full_reset=False, to_reset_settings=None):

@@ -8,24 +8,20 @@ import ssl
 import bpy
 import json
 import urllib
-import pathlib
 import addon_utils
 import requests
 from bpy.app.translations import locale
 
 from .register import register_wrap
 from . import settings
+from . import storage
 
-main_dir = pathlib.Path(os.path.dirname(__file__)).parent.resolve()
-resources_dir = os.path.join(str(main_dir), "resources")
-settings_file = os.path.join(resources_dir, "settings.json")
-translations_dir = os.path.join(resources_dir, "translations")
 
 dictionary: dict[str, str] = dict()
 languages = []
 verbose = True
 last_loaded_language = None
-dictionary_download_link = "https://github.com/teamneoneko/Cats-Blender-Plugin-Unofficial-translations/blob/4.3-translations/dictionary.json"
+dictionary_download_link = "https://raw.githubusercontent.com/teamneoneko/Cats-Blender-Plugin-Unofficial-translations/4.3-translations/dictionary.json"
 _addon_startup_time = None
 
 def load_translations(override_language=None):
@@ -49,8 +45,9 @@ def load_translations(override_language=None):
         print(f"Selected language: {language}")
 
     # Get all current languages
-    for i in os.listdir(translations_dir):
-        languages.append(i.split(".")[0])
+    for filename in storage.resource_files("translations"):
+        if filename.endswith(".json"):
+            languages.append(os.path.splitext(filename)[0])
     print(f"Available languages: {languages}")
 
     # Determine the language to load
@@ -62,20 +59,20 @@ def load_translations(override_language=None):
         language_to_load = "en_US"
 
     # Load the translation file
-    translation_file = os.path.join(translations_dir, language_to_load + ".json")
+    translation_file = storage.readable_resource("translations", language_to_load + ".json")
     if os.path.exists(translation_file):
         print(f"Loading translation file: {translation_file}")
-        with open(translation_file, 'r') as file:
+        with open(translation_file, 'r', encoding="utf8") as file:
             dictionary = json.load(fp=file)["messages"]
         last_loaded_language = language_to_load
         print(f"Loaded {len(dictionary)} translations from {language_to_load}")
     else:
         print(f"Translation file not found for language: {language_to_load}")
         # Load the default "en_US" translation file as last resort
-        default_file = os.path.join(translations_dir, "en_US.json")
+        default_file = storage.readable_resource("translations", "en_US.json")
         if os.path.exists(default_file):
             print(f"Loading fallback translation file: {default_file}")
-            with open(default_file, 'r') as file:
+            with open(default_file, 'r', encoding="utf8") as file:
                 dictionary = json.load(fp=file)["messages"]
             last_loaded_language = "en_US"
             print(f"Loaded {len(dictionary)} translations from en_US (fallback)")
@@ -165,7 +162,7 @@ def update_ui(self, context):
 def get_language_from_settings():
     # Load settings file
     try:
-        with open(settings_file, encoding="utf8") as file:
+        with open(storage.readable_resource("settings.json"), encoding="utf8") as file:
             settings_data = json.load(file)
     except FileNotFoundError:
         print("SETTINGS FILE NOT FOUND!")
@@ -201,7 +198,7 @@ def convert_locale_to_language_code(blender_locale):
     locale_str = str(blender_locale)
 
     # Check if exact match exists in available languages
-    for lang_file in os.listdir(translations_dir):
+    for lang_file in storage.resource_files("translations"):
         lang_code = lang_file.split(".")[0]
         if locale_str == lang_code:
             print(f"Found exact locale match: {lang_code}")
@@ -209,7 +206,7 @@ def convert_locale_to_language_code(blender_locale):
 
     # Try to match by language code (first part before underscore)
     language_only = locale_str.split("_")[0].lower() if "_" in locale_str else locale_str.lower()
-    for lang_file in os.listdir(translations_dir):
+    for lang_file in storage.resource_files("translations"):
         lang_code = lang_file.split(".")[0]
         if lang_code.lower().startswith(language_only):
             print(f"Found language match: {lang_code}")
@@ -249,7 +246,7 @@ class DownloadTranslations(bpy.types.Operator):
                 if file["type"] == "file" and file["name"].endswith(".json"):
                     file_url = file["download_url"]
                     file_name = file["name"]
-                    file_path = os.path.join(translations_dir, file_name)
+                    file_path = storage.user_file("translations", file_name, create=True)
 
                     # Download the translation file
                     file_response = requests.get(file_url)
@@ -269,7 +266,7 @@ class DownloadTranslations(bpy.types.Operator):
         print('TRANSLATIONS DOWNLOAD FINISHED')
 
         # Define the dictionary file path
-        dictionary_file = os.path.join(resources_dir, "dictionary.json")
+        dictionary_file = storage.user_file("dictionary.json", create=True)
 
         # Download dictionary.json from GitHub
         print('DOWNLOAD DICTIONARY FILE')

@@ -775,18 +775,18 @@ class StartTestingButton(bpy.types.Operator):
 
         armature_obj = Common.get_armature()
         for pb in armature_obj.pose.bones:
-            pb.select = True
+            Common.set_pose_bone_selected(pb, True)
         bpy.ops.pose.rot_clear()
         bpy.ops.pose.scale_clear()
         bpy.ops.pose.transforms_clear()
         for pb in armature_obj.pose.bones:
-            pb.select = False
-            pb.hide = True
+            Common.set_pose_bone_selected(pb, False)
+            Common.set_pose_bone_hidden(pb, True)
 
         # eye_left.select = True
         # eye_right.select = True
-        eye_left_data.hide = False
-        eye_right_data.hide = False
+        Common.set_pose_bone_hidden(eye_left, False)
+        Common.set_pose_bone_hidden(eye_right, False)
 
         context.scene.eye_rotation_x = 0
         context.scene.eye_rotation_y = 0
@@ -814,13 +814,13 @@ class StopTestingButton(bpy.types.Operator):
 
         armature_obj = Common.get_armature()
         for pb in armature_obj.pose.bones:
-            pb.hide = False
-            pb.select = True
+            Common.set_pose_bone_hidden(pb, False)
+            Common.set_pose_bone_selected(pb, True)
         bpy.ops.pose.rot_clear()
         bpy.ops.pose.scale_clear()
         bpy.ops.pose.transforms_clear()
         for pb in armature_obj.pose.bones:
-            pb.select = False
+            Common.set_pose_bone_selected(pb, False)
 
         armature = Common.set_default_stage()
         # armature.data.pose_position = 'REST'
@@ -876,14 +876,14 @@ def stop_testing(self, context):
         context.scene.eye_rotation_x = 0
         context.scene.eye_rotation_y = 0
 
-        for pb in armature.data.bones:
-            pb.hide = False
-            pb.select = True
+        for pb in armature.pose.bones:
+            Common.set_pose_bone_hidden(pb, False)
+            Common.set_pose_bone_selected(pb, True)
         bpy.ops.pose.rot_clear()
         bpy.ops.pose.scale_clear()
         bpy.ops.pose.transforms_clear()
-        for pb in armature.data.bones:
-            pb.select = False
+        for pb in armature.pose.bones:
+            Common.set_pose_bone_selected(pb, False)
 
         armature = Common.set_default_stage()
         # armature.data.pose_position = 'REST'

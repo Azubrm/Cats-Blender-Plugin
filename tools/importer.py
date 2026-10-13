@@ -36,6 +36,9 @@ except:
     pass
 
 formats = '*.pmx;*.pmd;*.xps;*.mesh;*.ascii;*.smd;*.qc;*.qci;*.vta;*.dmx;*.fbx;*.dae;*.vrm;*.zip'
+if bpy.app.version >= (5, 0, 0):
+    # Blender 5.0 removed its Collada importer/exporter.
+    formats = formats.replace(';*.dae', '')
 format_list = formats.replace('*.', '').split(';')
 zip_files = {}
 
@@ -189,6 +192,12 @@ class ImportAnyModel(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
 
         # DAE
         elif file_ending == 'dae':
+            if bpy.app.version >= (5, 0, 0):
+                Common.show_error(6, [
+                    'Blender 5.0 and newer no longer include Collada (.dae) import.',
+                    'Convert the model to FBX using Blender 4.5 LTS first.',
+                ])
+                return
             try:
                 bpy.ops.wm.collada_import('EXEC_DEFAULT',
                                           filepath=file_path,
@@ -542,6 +551,10 @@ class ImportMMDAnimation(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
 
             #assign animation back to original rig.
             armature.animation_data.action = new_armature.animation_data.action
+            if hasattr(new_armature.animation_data, 'action_slot'):
+                # Layered actions need their slot as well as the action. The
+                # proxy's slot name does not match the destination armature.
+                armature.animation_data.action_slot = new_armature.animation_data.action_slot
 
             #make sure our new armature is selected
             Common.unselect_all()
@@ -2088,6 +2101,11 @@ class ExportModel(bpy.types.Operator):
         path_mode = 'AUTO'
         if _textures_found and Settings.get_embed_textures():
             path_mode = 'COPY'
+
+        # FBX import and export still use the bundled Python add-on. In 5.2
+        # native FBX import no longer implicitly enables that add-on.
+        if not addon_utils.check('io_scene_fbx')[1]:
+            addon_utils.enable('io_scene_fbx')
 
         # Open export window
         try:

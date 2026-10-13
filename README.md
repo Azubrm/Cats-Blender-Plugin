@@ -1,14 +1,48 @@
-# Cats Blender Plugin Blender 5.x.
-#### Note Cats is basically on life Support unto Avatar Toolkit is more stable, we will stop pushing updates to Cats once Avatar Toolkit is stable.
+# Cats Blender Plugin — Blender 5.2 compatibility fork
 
-The non official version of Cats Blender Plugin which is maintained by Yusarina, Cats is an tool designed to shorten steps needed to import and optimize models into VRChat. Compatible models are: MMD, XNALara, Mixamo, Source Engine, Unreal Engine, DAZ/Poser, Blender Rigify, Sims 2, Motion Builder, 3DS Max and potentially more.
+This fork targets Blender **5.2.2 LTS**, with an installable version range of
+Blender 5.0–5.2. It continues the archived
+[Team Neoneko Cats](https://github.com/teamneoneko/Cats-Blender-Plugin)
+`blender-5x-dev` branch at `cadc04f1c363c45e2647d874b8c3ef864cdc6245`.
 
-### Please view the readme [here](https://github.com/unofficalcats/Cats-Blender-Plugin-Unofficial-/tree/Welcome)
+**Status: source-level compatibility changes only. No Blender execution,
+installation checks, automated tests, or functional validation have been run
+for this fork.** The version range is the intended target, not a certification
+that every inherited Cats feature works.
 
-#### Warning, Cats has changed UI wise, please [click here](https://github.com/unofficalcats/Cats-Blender-Plugin-Unofficial-/wiki/Features) to see the new UI features.
+## Install
 
-You can find both 3.6 and 4.1 blender releases [here](https://github.com/unofficalcats/Cats-Blender-Plugin-Unofficial-/releases), ensure you are using the one for your blender version!  
+1. Disable any older Cats installation, then restart Blender to unload it.
+2. Download the [Blender 5.2 branch ZIP](https://github.com/Azubrm/Cats-Blender-Plugin/archive/refs/heads/blender-5.2-compat.zip).
+3. In Blender, open **Edit → Preferences → Get Extensions**, open the menu,
+   and choose **Install from Disk**. Select the ZIP without extracting it.
+4. Enable **Cats Blender Plugin**. The **CATS** sidebar is in the 3D View.
 
-- You can find the development version for Blender 3.6 [here](https://github.com/unofficalcats/Cats-Blender-Plugin-Unofficial-/tree/blender-36-dev).
-- You can find the development version for Blender 4.1 [here](https://github.com/unofficalcats/Cats-Blender-Plugin-Unofficial-/tree/blender-41-dev).
-- You can find the development version for Blender 4.2 [here](https://github.com/unofficalcats/Cats-Blender-Plugin-Unofficial-/tree/blender-42-dev).
+Use the ZIP from the compatibility branch; the upstream `Welcome` branch
+contains documentation rather than the extension. This is a Blender extension
+with `blender_manifest.toml`, not the older legacy add-on ZIP that used the
+unsupported `TESTING` support category.
+
+## Changes in this fork
+
+- Allow Blender 5.1 and 5.2 instead of rejecting everything newer than 5.0.
+- Update extension metadata and bundle cross-platform Python dependencies.
+- Use the extension package identifier for preferences and the extension user
+  directory for mutable settings and translation data.
+- Update bone visibility/selection, animation-slot handling, and MMD material
+  paths for the Blender 5.x APIs.
+- Match shape-key menu registration and unregistration.
+- Disable the legacy self-updater so archived upstream builds cannot overwrite
+  these changes. Install future ZIPs through Blender's extension installer.
+- Stop running the legacy parent-directory cleanup during registration.
+
+See [COMPATIBILITY.md](COMPATIBILITY.md) for scope, known limitations, and API
+references. Optional third-party importers, Material Combiner, and Immersive
+Scaler remain separate dependencies; they are not bundled here.
+
+## Credits and license
+
+Cats was originally developed by Absolute Quantum and contributors, and later
+maintained by Team Neoneko. Original copyright and license notices are retained.
+The project is distributed under [GPL-3.0](LICENSE); bundled dependencies retain
+their own license files inside their wheels and source directories.

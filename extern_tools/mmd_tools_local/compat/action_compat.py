@@ -4,8 +4,8 @@
 """
 Simplest compatibility layer for Action.
 
-Only the first channelbag of ActionChannelbag is used,
-preserving the behavior of the previous version.
+Explicit slots select the owning datablock's channelbag. Calls without a slot
+retain the first-channelbag behavior of the previous compatibility layer.
 Although ActionChannelbag was introduced in Blender 4.4,
 since MMD Tools works well in 4.2–4.5, use it only in Blender 5.0+.
 """
@@ -23,11 +23,14 @@ else:
 class ActionGroupsCompatibility:
     """Compatibility layer: Makes Action.groups work in Blender 5.0+"""
 
-    def __init__(self, action: bpy.types.Action):
+    def __init__(self, action: bpy.types.Action, slot=None):
         self._action = action
+        self._slot = slot
 
     def _get_channelbag(self):
         """Get the first channelbag"""
+        if self._slot is not None:
+            return ActionFCurvesCompatibility(self._action, self._slot)._get_channelbag()
         if not hasattr(self._action, "layers"):
             return None
 
@@ -54,7 +57,7 @@ class ActionGroupsCompatibility:
         if channelbag is None:
             # Need to create channelbag structure first
             # Use ActionFCurvesCompatibility logic here
-            fcurves_compat = ActionFCurvesCompatibility(self._action)
+            fcurves_compat = ActionFCurvesCompatibility(self._action, self._slot)
             channelbag = fcurves_compat._get_channelbag(ensure=True)
             if channelbag is None:
                 raise RuntimeError("Cannot create action group: failed to get or create channelbag")
@@ -96,8 +99,9 @@ class ActionGroupsCompatibility:
 class ActionFCurvesCompatibility:
     """Compatibility layer: Makes Action.fcurves work in Blender 5.0+"""
 
-    def __init__(self, action: bpy.types.Action):
+    def __init__(self, action: bpy.types.Action, slot=None):
         self._action = action
+        self._slot = slot
 
     def _ensure_layer_and_strip(self):
         """Ensure Action has at least one layer and strip"""
@@ -137,6 +141,12 @@ class ActionFCurvesCompatibility:
 
     def _get_channelbag(self, ensure=False, id_type: str = "OBJECT"):
         """Get the first channelbag"""
+        if self._slot is not None:
+            from bpy_extras.anim_utils import action_ensure_channelbag_for_slot, action_get_channelbag_for_slot
+
+            if ensure:
+                return action_ensure_channelbag_for_slot(self._action, self._slot)
+            return action_get_channelbag_for_slot(self._action, self._slot)
         if not hasattr(self._action, "layers"):
             return None
 
@@ -277,60 +287,80 @@ class ActionFCurvesCompatibility:
         return len(self) > 0
 
 
-def get_action_fcurves(action: bpy.types.Action):
+def get_action_fcurves(action: bpy.types.Action, slot=None):
     """Get Action's fcurves (compatible with Blender 5.0+)
 
     Returns native action.fcurves in Blender 4.x
-    Returns compatibility layer object in Blender 5.0+
+    Returns a compatibility layer for the supplied slot in Blender 5.0+.
+    Omitting the slot preserves the legacy first-channelbag behavior.
     """
     if IS_BLENDER_50_UP:
-        return ActionFCurvesCompatibility(action)
+        return ActionFCurvesCompatibility(action, slot)
     return action.fcurves
 
 
-def get_action_groups(action: bpy.types.Action):
+def get_action_groups(action: bpy.types.Action, slot=None):
     """Get Action's groups (compatible with Blender 5.0+)
 
     Returns native action.groups in Blender 4.x
-    Returns compatibility layer object in Blender 5.0+
+    Returns a compatibility layer for the supplied slot in Blender 5.0+.
     """
     if IS_BLENDER_50_UP:
-        return ActionGroupsCompatibility(action)
+        return ActionGroupsCompatibility(action, slot)
     return action.groups
 
 
-def new_fcurve(action_obj: bpy.types.Action, data_path: str, index: int = 0, group_name: str = "", id_type: str = "OBJECT"):
+def new_fcurve(action_obj: bpy.types.Action, data_path: str, index: int = 0, group_name: str = "", id_type: str = "OBJECT", slot=None):
     """
     Create an F-Curve in a version-independent way.
     Handles the `id_type` argument, available only in Blender 5.0+.
     """
-    fcurves = get_action_fcurves(action_obj)
+    fcurves = get_action_fcurves(action_obj, slot)
 
     if IS_BLENDER_50_UP:
         return fcurves.new(data_path, index=index, group_name=group_name, id_type=id_type)
     return fcurves.new(data_path, index=index, action_group=group_name)
 
 
-def assign_action_to_datablock(datablock, action):
+def ensure_action_slot(action, datablock):
+    """Get the datablock's assigned slot, or a slot of the correct ID type."""
+    if not IS_BLENDER_50_UP:
+        return None
+
+    animation_data = datablock.animation_data
+    if animation_data and animation_data.action == action and animation_data.action_slot:
+        return animation_data.action_slot
+
+    # A Light or Material owning a node tree is still a LIGHT or MATERIAL ID.
+    id_type = datablock.id_type
+    for slot in action.slots:
+        if slot.target_id_type in {id_type, "UNSPECIFIED"}:
+            return slot
+    return action.slots.new(name=datablock.name, id_type=id_type)
+
+
+def get_animation_fcurves(animation_data):
+    """Read only the curves used by the assigned Action slot."""
+    if not animation_data or not animation_data.action:
+        return ()
+    if IS_BLENDER_50_UP:
+        if animation_data.action_slot is None:
+            return ()
+        return get_action_fcurves(animation_data.action, animation_data.action_slot)
+    return animation_data.action.fcurves
+
+
+def assign_action_to_datablock(datablock, action, slot=None):
     """Assign Action to datablock and ensure slot is properly set in Blender 5.0+"""
     if not datablock.animation_data:
         datablock.animation_data_create()
 
-    datablock.animation_data.action = action
-
     if IS_BLENDER_50_UP and action is not None:
-        # Auto-create slot if missing
-        if not hasattr(action, "slots") or len(action.slots) == 0:
-            id_type = "OBJECT"
-            if isinstance(datablock, bpy.types.Key):
-                id_type = "KEY"
-            elif hasattr(datablock, "node_tree"):
-                id_type = "NODETREE"
+        slot = slot if slot is not None else ensure_action_slot(action, datablock)
 
-            slot_name = action.name if action.name else "Slot"
-            action.slots.new(name=slot_name, id_type=id_type)
-
-        datablock.animation_data.action_slot = action.slots[0]
+    datablock.animation_data.action = action
+    if IS_BLENDER_50_UP and action is not None:
+        datablock.animation_data.action_slot = slot
 
 
 # Monkey patch to Action objects

@@ -349,7 +349,9 @@ class FnMaterial:
             return
         mat = self.material
         mmd_mat = mat.mmd_material
-        if hasattr(mat, "blend_method"):
+        if hasattr(mat, "surface_render_method"):
+            mat.surface_render_method = "DITHERED"
+        elif hasattr(mat, "blend_method"):
             mat.blend_method = "HASHED"  # 'BLEND'
             # mat.show_transparent_back = False
         elif hasattr(mat, "transparency_method"):
