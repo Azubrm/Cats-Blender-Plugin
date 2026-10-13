@@ -1,3 +1,15 @@
+# Blender 5.2 compatibility fork
+
+The Blender 5.2.2 LTS adaptation is on the [`blender-5.2-compat` branch](https://github.com/Azubrm/Cats-Blender-Plugin/tree/blender-5.2-compat).
+
+**[Download the extension ZIP](https://github.com/Azubrm/Cats-Blender-Plugin/archive/refs/heads/blender-5.2-compat.zip)** and install it with Blender's **Preferences → Get Extensions → Install from Disk**. Disable older Cats installations first. The default `Welcome` branch is documentation only.
+
+**Validation status:** source changes only; no Blender execution, installation validation, compilation checks, or tests were run, as requested. See the branch's [compatibility notes](https://github.com/Azubrm/Cats-Blender-Plugin/blob/blender-5.2-compat/COMPATIBILITY.md).
+
+---
+
+## Original upstream README
+
 # Cats Blender Plugin
 
 ### The Neoneko version of Cats is no longer maintained, feel free to fork.
