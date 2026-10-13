@@ -38,21 +38,27 @@ def make_annotations(cls):
 
 def order_classes():
     global __bl_ordered_classes
+    # Preserve decorator/import order for classes without dependencies. A set
+    # makes panel ordering depend on Python's process-specific object hashes.
+    classes_to_register = list(dict.fromkeys(iter_classes_to_register()))
+    own_classes = set(classes_to_register)
+    panels_by_id = {
+        getattr(cls, 'bl_idname', '') or cls.__name__: cls
+        for cls in classes_to_register
+        if issubclass(cls, bpy.types.Panel)
+    }
     deps_dict = {}
-    classes_to_register = set(iter_classes_to_register())
     for cls in classes_to_register:
-        deps_dict[cls] = set(iter_own_register_deps(cls, classes_to_register))
+        dependencies = set(iter_own_register_deps(cls, own_classes))
+        if issubclass(cls, bpy.types.Panel):
+            parent = panels_by_id.get(getattr(cls, 'bl_parent_id', ''))
+            if parent is not None:
+                dependencies.add(parent)
+        deps_dict[cls] = dependencies
 
-    # Put all the UI into the list first
-    __bl_ordered_classes = []
-    for cls in __bl_classes:
-        if cls.__module__.startswith('ui.'):
-            __bl_ordered_classes.append(cls)
-
-    # Then put everything else sorted into the list
-    for cls in toposort(deps_dict):
-        if not cls.__module__.startswith('ui.'):
-            __bl_ordered_classes.append(cls)
+    # Panel parent IDs are registration dependencies, just like PointerProperty
+    # types. This also works with fully qualified bl_ext.* package names.
+    __bl_ordered_classes = toposort(deps_dict)
 
 
 def iter_classes_to_register():
@@ -86,14 +92,15 @@ def get_dependency_from_annotation(value):
 
 def toposort(deps_dict):
     sorted_list = []
-    sorted_values = set()
-    while len(deps_dict) > 0:
-        unsorted = []
-        for value, deps in deps_dict.items():
-            if len(deps) == 0:
-                sorted_list.append(value)
-                sorted_values.add(value)
-            else:
-                unsorted.append(value)
-        deps_dict = {value : deps_dict[value] - sorted_values for value in unsorted}
+    pending = {cls: set(deps) for cls, deps in deps_dict.items()}
+    while pending:
+        ready = [cls for cls, deps in pending.items() if not deps]
+        if not ready:
+            names = ', '.join(cls.__name__ for cls in pending)
+            raise RuntimeError('Cyclic Cats registration dependencies: ' + names)
+        sorted_list.extend(ready)
+        for cls in ready:
+            del pending[cls]
+        for dependencies in pending.values():
+            dependencies.difference_update(ready)
     return sorted_list

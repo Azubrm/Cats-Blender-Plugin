@@ -1,7 +1,7 @@
 # Blender 5.2 compatibility notes
 
 Target: Blender 5.2.2 LTS, as listed on the [official download page](https://www.blender.org/download/)
-on 2026-10-13. Package version: 5.2.0. The manifest accepts Blender 5.0 through
+on 2026-10-13. Package version: 5.2.1. The manifest accepts Blender 5.0 through
 5.2 and stops before 5.3, which is outside this adaptation's scope.
 
 ## Validation status
@@ -10,6 +10,16 @@ At the requester's direction, Blender was not launched and no tests, compiler
 checks, extension validation, installation checks, or functional smoke tests
 were run. Changes are based on source inspection, bundled Blender 5.2 Python
 source, and official API documentation. Runtime compatibility remains unverified.
+
+## 5.2.1 registration fix
+
+A user installation of 5.2.0 reported that `VIEW3D_PT_eye_tracking_v3` was
+missing when registering `VIEW3D_PT_eye_tracking_legacy_v3`. The registration
+sorter used an unordered set and did not include `bl_parent_id` dependencies.
+Version 5.2.1 preserves declaration order for unrelated classes, registers
+parents before sub-panels, and reports dependency cycles instead of hanging.
+This also covers the custom-model and optimization panel hierarchies. No
+runtime validation of this fix has been performed.
 
 ## Installation and updates
 

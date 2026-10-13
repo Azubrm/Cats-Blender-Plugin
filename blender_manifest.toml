@@ -2,7 +2,7 @@ schema_version = "1.0.0"
 
 # Cats Blender Plugin extension for Blender 5.2
 id = "cats_blender_plugin"
-version = "5.2.0"
+version = "5.2.1"
 name = "Cats Blender Plugin"
 tagline = "Import and optimize avatar models for VRChat"
 maintainer = "Azubrm"

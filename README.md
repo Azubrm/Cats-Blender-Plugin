@@ -25,6 +25,8 @@ unsupported `TESTING` support category.
 
 ## Changes in this fork
 
+- Version 5.2.1 fixes installation errors where a sub-panel's parent is not
+  registered yet. All panel parent dependencies are now ordered explicitly.
 - Allow Blender 5.1 and 5.2 instead of rejecting everything newer than 5.0.
 - Update extension metadata and bundle cross-platform Python dependencies.
 - Use the extension package identifier for preferences and the extension user
